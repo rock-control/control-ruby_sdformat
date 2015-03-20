@@ -1,4 +1,4 @@
-lib/sdf/base.rb
+lib/sdf/xml.rb
 lib/sdf/test.rb
 lib/sdf.rb
 test/suite.rb

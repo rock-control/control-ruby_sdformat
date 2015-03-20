@@ -6,35 +6,32 @@ if ENV['TEST_ENABLE_COVERAGE'] == '1'
         SimpleCov.start
     rescue LoadError
         require 'dummy_project'
-        Sdf.warn "coverage is disabled because the 'simplecov' gem cannot be loaded"
+        SDF.warn "coverage is disabled because the 'simplecov' gem cannot be loaded"
     rescue Exception => e
         require 'dummy_project'
-        Sdf.warn "coverage is disabled: #{e.message}"
+        SDF.warn "coverage is disabled: #{e.message}"
     end
 end
 
 require 'sdf'
-## Uncomment this to enable flexmock
-# require 'flexmock/test_unit'
 require 'minitest/spec'
 
 if ENV['TEST_ENABLE_PRY'] != '0'
     begin
         require 'pry'
     rescue Exception
-        Sdf.warn "debugging is disabled because the 'pry' gem cannot be loaded"
+        SDF.warn "debugging is disabled because the 'pry' gem cannot be loaded"
     end
 end
 
-module Sdf
+module SDF
     # This module is the common setup for all tests
     #
     # It should be included in the toplevel describe blocks
     #
     # @example
     #   require 'sdf/test'
-    #   describe Sdf do
-    #     include Sdf::SelfTest
+    #   describe SDF do
     #   end
     #
     module SelfTest
@@ -57,4 +54,6 @@ module Sdf
     end
 end
 
-
+class Minitest::Test
+    include SDF::SelfTest
+end

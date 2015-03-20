@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+    <include>
+        <uri>model://simple_model</uri>
+    </include>
+    <include>
+        <uri>model://composite_model</uri>
+    </include>
+</sdf>
