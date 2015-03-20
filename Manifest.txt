@@ -1,0 +1,11 @@
+lib/sdf/base.rb
+lib/sdf/test.rb
+lib/sdf.rb
+test/suite.rb
+test/test_sdf.rb
+.gemtest
+manifest.xml
+Rakefile
+README.rdoc
+History.txt
+Manifest.txt

@@ -1,0 +1,21 @@
+<package>
+  <description brief="Library to read SDF files from Ruby">
+  
+  </description>
+  <author>Sylvain Joyeux/sylvain.joyeux@m4x.org</author>
+  <license></license>
+  <url>http://</url>
+  <logo>http://</logo>
+
+  <depend package="hoe" />
+  <depend package="hoe-yard" />
+  <depend package="rake-compiler" />
+  <depend package="utilrb" />
+  <!--
+   To add any dependencies use the depend tag
+  <depend package="dummy-dependency-0" />
+	...
+  <depend package="dummy-dependency-n-1" />
+  <depend package="dummy-dependency-n" />
+  -->
+</package>
