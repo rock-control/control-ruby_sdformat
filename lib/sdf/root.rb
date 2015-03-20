@@ -1,6 +1,6 @@
 module SDF
     # A representation of a SDF document root
-    class Root < Base
+    class Root < Element
         # The XML document underlying this SDF document
         #
         # @return [REXML::Document]
