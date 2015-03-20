@@ -9,6 +9,7 @@ begin
     hoe_spec = Hoe.spec package_name do
         self.version = ''
         self.developer "Sylvain Joyeux", "sylvain.joyeux@m4x.org"
+        self.license 'LGPLv3+'
         self.extra_deps <<
             ['rake', '>= 0.8.0'] <<
             ["hoe",     ">= 3.0.0"] <<
