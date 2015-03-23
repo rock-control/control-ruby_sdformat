@@ -33,9 +33,15 @@ module SDF
             @model_path = Array(path)
             clear_cache
         end
-            
-        @model_path = (ENV['GAZEBO_MODEL_PATH'] || '').split(':')
-
+        
+        #load model_path with default parameters
+        def self.initialize
+            @model_path = (ENV['GAZEBO_MODEL_PATH'] || '').split(':')
+            @model_path << "#{ENV['HOME']}/.gazebo/models"
+        end
+        
+        initialize
+        
         # Clears the model cache
         #
         # @return [void]
@@ -55,6 +61,22 @@ module SDF
         #
         # @return [REXML::Element]
         def self.load_gazebo_model(dir, sdf_version = nil)
+            return load_sdf(get_model_path(dir))
+        end
+        
+        
+        # Find model string into model.config path
+        #
+        # @param [String] dir the path to the model directory
+        # @!macro sdf_version
+        # @raise [Errno::ENOENT] if the files does not exist
+        # @raise [NotSDF] if the file is not a SDF file
+        # @raise [InvalidXML] if the file is not a valid XML file
+        # @raise [UnavailableSDFVersionInModel] if the model does not contain a
+        #   SDF file for the required SDF version
+        #
+        # @return [String]        
+        def self.get_model_path(dir, sdf_version = nil)
             config = File.open(File.join(dir, "model.config")) do |io|
                 begin
                     REXML::Document.new(io)
@@ -66,7 +88,7 @@ module SDF
             sdf = config.elements.enum_for(:each, 'model/sdf').map do |sdf_element|
                 version = Float(sdf_element.attributes['version'])
                 version = (version * 100).round
-                [version, load_sdf(File.join(dir, sdf_element.text))]
+                [version, File.join(dir, sdf_element.text)]
             end
             if sdf_version
                 sdf = sdf.find_all { |v, _| v <= sdf_version }
@@ -77,7 +99,7 @@ module SDF
                 return sdf.max_by { |v, _| v }.last
             end
         end
-
+        
         # Finds a gazebo model by name, and loads it
         #
         # The search path is returned by {model_path} and can be overriden by
@@ -92,16 +114,15 @@ module SDF
         # @param [String] name the model name
         # @!macro sdf_version
         # @return [REXML::Element,nil]
-        def self.find_and_load_gazebo_model(name, sdf_version = nil)
+        def self.find_and_load_gazebo_model(name, sdf_version = nil)       
             @gazebo_models[sdf_version] ||= Hash.new
             if model = @gazebo_models[sdf_version][name]
                 return model
             end
 
-            model_path.each do |p|
+            @model_path.each do |p|
                 model_path = File.join(p, name)
-                model_config_path = File.join(model_path, "model.config")
-                if File.file?(model_config_path)
+                if File.file?(File.join(model_path, "model.config"))
                     begin
                         sdf = load_gazebo_model(model_path, sdf_version)
                         return (@gazebo_models[sdf_version][name] = sdf)
@@ -125,7 +146,7 @@ module SDF
         # @return [Hash<String,REXML::Element>]
         def self.gazebo_models(sdf_version = nil)
             @gazebo_models[sdf_version] ||= Hash.new
-            model_path.each do |p|
+            @model_path.each do |p|
                 Dir.glob(File.join(p, "*")) do |subdir|
                     model_name = File.basename(subdir)
                     next if @gazebo_models[sdf_version][model_name]
@@ -159,16 +180,114 @@ module SDF
             end
         end
 
-        # Loads a SDF file and returns the XML representation
+        #find model path by model name
         #
-        # This resolves the include tags in the XML representation
+        #check if there is a model into model_path directories
+        #
+        #@!macro sdf_version
+        #@param [String] model path
+        #@return [String] full model path directory        
+        def self.find_model_path(model_name)
+            @model_path.each do |p|
+                model_dir = File.join(p, model_name)
+                model_config_path = File.join(model_dir, "model.config")
+                if File.file?(model_config_path)
+                    return model_dir
+                end
+            end
+        end
+        
+        #find include tags and return the path of models
+        #
+        #@!macro sdf_version
+        #@param [RESXML::Element] root element to find include tags
+        #@return [Array[String]] string array with full model paths   
+        def self.find_models_paths(elem, sdf_version)
+            models = []
+
+            elem.elements.each("include") do |inc|
+                inc.elements.each("uri") do |uri|
+                    if uri.text =~ /^model:\/\/(.*)$/
+                        model_name = $1
+                    else
+                        raise ArgumentError, "cannot interpret include URI #{uri}"
+                    end
+
+                    model_dir = find_model_path(model_name)
+                    model_filename = get_model_path(model_dir, sdf_version)
+
+                    models << model_filename
+
+                end
+            end
+            return models
+        end
+
+        # find and list models paths defined into sdf file
+        #
+        #@!macro sdf_version
+        #@param [String] sdf_file sdf full path which the models paths will listed
+        #@return [Array[String]] string array with full model paths      
+        def self.find_sdf_models_paths(sdf_file, sdf_version = nil)               
+            sdf = open_sdf(sdf_file)
+            sdf_version = get_sdf_version(sdf)
+            
+            models = []
+                
+            models << find_models_paths(sdf.root, sdf_version) 
+            
+            sdf.root.elements.each('world') do |e|
+                models = models + find_models_paths(e, sdf_version)
+            end
+            
+            sdf.root.elements.each('model') do |e|
+                models = models + find_models_paths(e, sdf_version)
+            end
+            
+            models = models.compact.reject(&:empty?)
+            
+            puts "filenames: #{models}"
+            
+            return models
+        end
+        
+        #find include models
+        #
+        #@!macro sdf_version
+        #@param [RESXML::Element] root element to find include tags
+        def self.add_include_tags(elem, sdf_version = nil)            
+            replacements = []
+            elem.elements.each("include") do |inc|
+                inc.elements.each("uri") do |uri|
+                    if uri.text =~ /^model:\/\/(.*)$/
+                        model_name = $1
+                    else
+                        raise ArgumentError, "cannot interpret include URI #{uri}"
+                    end
+                                       
+                    included_sdf = model_from_name(model_name, sdf_version)
+                    replacements << [inc, included_sdf.root.elements]
+                end
+            end
+                            
+            replacements.each do |inc, models|
+                parent = inc.parent
+                inc.remove
+                models.each do |m|
+                    parent << m.dup 
+                end
+            end
+        end
+        
+
+        # Open a SDF file and returns the XML representation
         #
         # @param [String] sdf_file the path to the SDF file
         # @raise [Errno::ENOENT] if the files does not exist
         # @raise [NotSDF] if the file is not a SDF file
         # @raise [InvalidXML] if the file is not a valid XML file
         # @return [REXML::Element]
-        def self.load_sdf(sdf_file)
+        def self.open_sdf(sdf_file)
             sdf = File.open(sdf_file) do |io|
                 begin
                     REXML::Document.new(io)
@@ -179,31 +298,47 @@ module SDF
             if sdf.root.name != 'sdf' && sdf.root.name != 'gazebo'
                 raise NotSDF, "#{sdf_file} is not a SDF file"
             end
-
+            sdf
+        end
+        
+        # Get sdf_version
+        #
+        # @param [REXML::Element] sdf element
+        # @return [Float]
+        def self.get_sdf_version(sdf)
             if sdf_version = sdf.root.attributes['version']
                 sdf_version = (Float(sdf_version) * 100).round
+                return sdf_version
             end
+            nil
+        end
 
-            replacements = []
-            sdf.elements.each("*/include") do |inc|
-                inc.elements.each("uri") do |uri|
-                    if uri.text =~ /^model:\/\/(.*)$/
-                        model_name = $1
-                    else
-                        raise ArgumentError, "cannot interpret include URI #{uri}"
-                    end
 
-                    included_sdf = model_from_name(model_name, sdf_version)
-                    replacements << [inc, included_sdf.root.elements]
-                end
+        # Loads a SDF file and returns the XML representation
+        #
+        # This resolves the include tags in the XML representation
+        #
+        # @param [String] sdf_file the path to the SDF file
+        # @raise [Errno::ENOENT] if the files does not exist
+        # @raise [NotSDF] if the file is not a SDF file
+        # @raise [InvalidXML] if the file is not a valid XML file
+        # @return [REXML::Element]
+        def self.load_sdf(sdf_file)
+            
+            sdf = open_sdf(sdf_file)
+            
+            sdf_version = get_sdf_version(sdf)
+            
+            add_include_tags(sdf.root, sdf_version)
+            
+            sdf.root.elements.each('world') do |e|
+                add_include_tags(e, sdf_version)
             end
-            replacements.each do |inc, models|
-                parent = inc.parent
-                inc.remove
-                models.each do |m|
-                    parent << m.dup
-                end
+            
+            sdf.root.elements.each('model') do |e|
+                add_include_tags(e, sdf_version)
             end
+                        
             sdf
         end
     end
