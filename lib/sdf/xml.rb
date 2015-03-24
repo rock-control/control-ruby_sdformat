@@ -37,7 +37,7 @@ module SDF
         #load model_path with default parameters
         def self.initialize
             @model_path = (ENV['GAZEBO_MODEL_PATH'] || '').split(':')
-            @model_path << "#{ENV['HOME']}/.gazebo/models"
+            @model_path << File.join(Dir.home, '.gazebo', 'models')
         end
         
         initialize
@@ -61,7 +61,7 @@ module SDF
         #
         # @return [REXML::Element]
         def self.load_gazebo_model(dir, sdf_version = nil)
-            return load_sdf(get_model_path(dir))
+            return load_sdf(model_path_of(dir))
         end
         
         
@@ -76,7 +76,7 @@ module SDF
         #   SDF file for the required SDF version
         #
         # @return [String]        
-        def self.get_model_path(dir, sdf_version = nil)
+        def self.model_path_of(dir, sdf_version = nil)
             config = File.open(File.join(dir, "model.config")) do |io|
                 begin
                     REXML::Document.new(io)
@@ -180,77 +180,6 @@ module SDF
             end
         end
 
-        #find model path by model name
-        #
-        #check if there is a model into model_path directories
-        #
-        #@!macro sdf_version
-        #@param [String] model path
-        #@return [String] full model path directory        
-        def self.find_model_path(model_name)
-            @model_path.each do |p|
-                model_dir = File.join(p, model_name)
-                model_config_path = File.join(model_dir, "model.config")
-                if File.file?(model_config_path)
-                    return model_dir
-                end
-            end
-        end
-        
-        #find include tags and return the path of models
-        #
-        #@!macro sdf_version
-        #@param [RESXML::Element] root element to find include tags
-        #@return [Array[String]] string array with full model paths   
-        def self.find_models_paths(elem, sdf_version)
-            models = []
-
-            elem.elements.each("include") do |inc|
-                inc.elements.each("uri") do |uri|
-                    if uri.text =~ /^model:\/\/(.*)$/
-                        model_name = $1
-                    else
-                        raise ArgumentError, "cannot interpret include URI #{uri}"
-                    end
-
-                    model_dir = find_model_path(model_name)
-                    model_filename = get_model_path(model_dir, sdf_version)
-
-                    models << model_filename
-
-                end
-            end
-            return models
-        end
-
-        # find and list models paths defined into sdf file
-        #
-        #@!macro sdf_version
-        #@param [String] sdf_file sdf full path which the models paths will listed
-        #@return [Array[String]] string array with full model paths      
-        def self.find_sdf_models_paths(sdf_file, sdf_version = nil)               
-            sdf = open_sdf(sdf_file)
-            sdf_version = get_sdf_version(sdf)
-            
-            models = []
-                
-            models << find_models_paths(sdf.root, sdf_version) 
-            
-            sdf.root.elements.each('world') do |e|
-                models = models + find_models_paths(e, sdf_version)
-            end
-            
-            sdf.root.elements.each('model') do |e|
-                models = models + find_models_paths(e, sdf_version)
-            end
-            
-            models = models.compact.reject(&:empty?)
-            
-            puts "filenames: #{models}"
-            
-            return models
-        end
-        
         #find include models
         #
         #@!macro sdf_version
@@ -287,7 +216,7 @@ module SDF
         # @raise [NotSDF] if the file is not a SDF file
         # @raise [InvalidXML] if the file is not a valid XML file
         # @return [REXML::Element]
-        def self.open_sdf(sdf_file)
+        def self.load_sdf_raw(sdf_file)
             sdf = File.open(sdf_file) do |io|
                 begin
                     REXML::Document.new(io)
@@ -305,7 +234,7 @@ module SDF
         #
         # @param [REXML::Element] sdf element
         # @return [Float]
-        def self.get_sdf_version(sdf)
+        def self.sdf_version_of(sdf)
             if sdf_version = sdf.root.attributes['version']
                 sdf_version = (Float(sdf_version) * 100).round
                 return sdf_version
@@ -325,9 +254,9 @@ module SDF
         # @return [REXML::Element]
         def self.load_sdf(sdf_file)
             
-            sdf = open_sdf(sdf_file)
+            sdf = load_sdf_raw(sdf_file)
             
-            sdf_version = get_sdf_version(sdf)
+            sdf_version = sdf_version_of(sdf)
             
             add_include_tags(sdf.root, sdf_version)
             
@@ -343,5 +272,3 @@ module SDF
         end
     end
 end
-
-
