@@ -61,7 +61,7 @@ module SDF
         #
         # @return [REXML::Element]
         def self.load_gazebo_model(dir, sdf_version = nil)
-            return load_sdf(model_path_of(dir))
+            return load_sdf(model_path_of(dir, sdf_version))
         end
         
         
