@@ -130,7 +130,6 @@ module SDF
                         SDF.warn "invalid SDF file specified in #{model_config_path} for SDF version #{sdf_version}: #{e.message}"
                     rescue InvalidXML => e
                         SDF.warn "invalid XML file found while loading #{model_config_path} for SDF version #{sdf_version}: #{e.message}"
-                    rescue UnavailableSDFVersionInModel
                     end
                 end
             end

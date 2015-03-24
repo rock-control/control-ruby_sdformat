@@ -45,9 +45,19 @@ module SDF
 
         # Enumerates the SDF models that are direct children of this root
         def each_model
-            xml.elements.each('model') do |element|
+            xml.elements.each('sdf/model') do |element|
                 yield(Model.new(element, self))
             end
         end
+        
+        # Enumerates the SDF models that are children of this parent
+        #
+        #@param [String] parent tag name
+        def each_model_from(parent)
+            xml.elements.each("#{parent}/model") do |element|
+                yield(Model.new(element, self))
+            end            
+        end
+        
     end
 end
