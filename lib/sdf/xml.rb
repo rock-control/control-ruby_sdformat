@@ -157,10 +157,14 @@ module SDF
             raise NoSuchModel, "cannot find model #{model_name} in path #{model_path.join(":")}. You probably want to update the GAZEBO_MODEL_PATH environment variable, or set SDF.model_path explicitely"
         end
 
-        #find include models
+        # Resolves the include tags children of an element
         #
-        #@!macro sdf_version
-        #@param [RESXML::Element] root element to find include tags
+        # This method modifies the XML tree by replacing the include tags found
+        # as direct children of the provided element by the included content.
+        #
+        # @param [REXML::Element] root element to find include tags
+        # @!macro sdf_version
+        # @return [void]
         def self.add_include_tags(elem, sdf_version = nil)            
             replacements = []
             elem.elements.each("include") do |inc|
@@ -184,7 +188,6 @@ module SDF
                 end
             end
         end
-        
 
         # Open a SDF file and returns the XML representation
         #
