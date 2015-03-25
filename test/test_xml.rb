@@ -96,5 +96,31 @@ describe SDF::XML do
                 model_names.sort)
         end
     end
+
+    describe "model_from_name" do
+        it "resolves and returns the raw model" do
+            sdf = SDF::XML.model_from_name('simple_model')
+            model = sdf.elements.enum_for(:each, 'sdf/model').first
+            assert_equal('simple test model', model.attributes['name'])
+        end
+        it "returns the model matching the SDF version" do
+            sdf = SDF::XML.model_from_name('versioned_model', 130)
+            model = sdf.elements.enum_for(:each, 'sdf/model').first
+            assert_equal('versioned model 1.3', model.attributes['name'])
+        end
+        it "caches the result" do
+            sdf1 = SDF::XML.model_from_name('simple_model')
+            sdf2 = SDF::XML.model_from_name('simple_model')
+            assert_same sdf1, sdf2
+        end
+        it "caches the result in a version-aware way" do
+            sdf1 = SDF::XML.model_from_name('versioned_model')
+            sdf2 = SDF::XML.model_from_name('versioned_model', 130)
+            model = sdf1.elements.enum_for(:each, 'sdf/model').first
+            assert_equal('versioned model 1.5', model.attributes['name'])
+            model = sdf2.elements.enum_for(:each, 'sdf/model').first
+            assert_equal('versioned model 1.3', model.attributes['name'])
+        end
+    end
 end
 

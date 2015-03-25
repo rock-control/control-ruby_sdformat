@@ -15,6 +15,9 @@ module SDF
         class NotSDF < ArgumentError; end
         # Exception raised when trying to load a malformed XML file
         class InvalidXML < ArgumentError; end
+        # Exception raised when trying to resolve a model that cannot be found
+        # in {model_path}
+        class NoSuchModel < ArgumentError; end
 
         # The search path for models
         #
@@ -99,42 +102,6 @@ module SDF
                 return sdf.max_by { |v, _| v }.last
             end
         end
-        
-        # Finds a gazebo model by name, and loads it
-        #
-        # The search path is returned by {model_path} and can be overriden by
-        # {model_path=}
-        #
-        # The loaded models are cached. Call {clear_cache} first to reload
-        # models from disk.
-        #
-        # Note that model files that cannot be loaded (e.g. contain errors) will
-        # be ignored. A warning is issued.
-        #
-        # @param [String] name the model name
-        # @!macro sdf_version
-        # @return [REXML::Element,nil]
-        def self.find_and_load_gazebo_model(name, sdf_version = nil)       
-            @gazebo_models[sdf_version] ||= Hash.new
-            if model = @gazebo_models[sdf_version][name]
-                return model
-            end
-
-            @model_path.each do |p|
-                model_path = File.join(p, name)
-                if File.file?(File.join(model_path, "model.config"))
-                    begin
-                        sdf = load_gazebo_model(model_path, sdf_version)
-                        return (@gazebo_models[sdf_version][name] = sdf)
-                    rescue NotSDF => e
-                        SDF.warn "invalid SDF file specified in #{model_config_path} for SDF version #{sdf_version}: #{e.message}"
-                    rescue InvalidXML => e
-                        SDF.warn "invalid XML file found while loading #{model_config_path} for SDF version #{sdf_version}: #{e.message}"
-                    end
-                end
-            end
-            nil
-        end
 
         @gazebo_models = Hash.new
 
@@ -170,14 +137,24 @@ module SDF
         #
         # @param [String] model_name the model name
         # @!macro sdf_version
-        # @raise (see find_and_load_gazebo_model)
+        # @raise (see load_gazebo_model)
+        # @raise [NoSuchModel] if the provided model name does not resolve to a
+        #   model in {model_path}
         # @return [REXML::Element]
         def self.model_from_name(model_name, sdf_version = nil)
-            if m = find_and_load_gazebo_model(model_name, sdf_version)
-                return m
-            else
-                raise ArgumentError, "cannot find model #{model_name} in path #{model_path.join(":")}. You probably want to update the GAZEBO_MODEL_PATH environment variable, or set SDF.model_path explicitely"
+            @gazebo_models[sdf_version] ||= Hash.new
+            if model = @gazebo_models[sdf_version][model_name]
+                return model
             end
+
+            @model_path.each do |p|
+                model_path = File.join(p, model_name)
+                if File.file?(File.join(model_path, "model.config"))
+                    sdf = load_gazebo_model(model_path, sdf_version)
+                    return (@gazebo_models[sdf_version][model_name] = sdf)
+                end
+            end
+            raise NoSuchModel, "cannot find model #{model_name} in path #{model_path.join(":")}. You probably want to update the GAZEBO_MODEL_PATH environment variable, or set SDF.model_path explicitely"
         end
 
         #find include models
