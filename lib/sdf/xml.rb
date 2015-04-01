@@ -80,11 +80,12 @@ module SDF
         #
         # @return [String]        
         def self.model_path_of(dir, sdf_version = nil)
-            config = File.open(File.join(dir, "model.config")) do |io|
+            model_config_path = File.join(dir, "model.config")
+            config = File.open(model_config_path) do |io|
                 begin
                     REXML::Document.new(io)
                 rescue REXML::ParseException => e
-                    raise InvalidXML, e.message
+                    raise InvalidXML, "in #{model_config_path}, #{e.message}"
                 end
             end
 
