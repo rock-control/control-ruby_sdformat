@@ -9,5 +9,8 @@ require 'sdf/model'
 require 'utilrb/logger'
 module SDF
     extend Logger::Root('SDF', Logger::WARN)
+
+    # Exception raised when the XML does not match the SDF specification
+    class Invalid < RuntimeError; end
 end
 

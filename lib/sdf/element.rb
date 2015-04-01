@@ -30,5 +30,51 @@ module SDF
         def name
             xml.attributes['name']
         end
+
+        # The XPath from the root this element
+        #
+        # @return [String]
+        def xpath
+            xml.xpath
+        end
+
+        def to_s
+            xpath
+        end
+
+        def full_name
+            if (p = parent) && (p_name = p.full_name)
+                p_name + '.' + name
+            else
+                name
+            end
+        end
+
+        # @api private
+        #
+        # Gets one of this element's child
+        #
+        # @param [String] name the child's tag name
+        # @param [#new(xml, parent)] class the object that should be
+        #   instanciated to represent the child
+        # @param [Boolean] required if true, the method will raise if the child
+        #   is not present. Otherwise, klass will be instanciated with an empty
+        #   XML element
+        def child_by_name(name, klass, required = true)
+            children = xml.elements.to_a(name)
+            if children.empty?
+                if required
+                    raise Invalid, "expected #{self} to have a #{name} child element, but could not find one"
+                else
+                    child = xml.add_element(name)
+                    return klass.new(child, self)
+                end
+            elsif children.size > 1
+                raise Invalid, "more than one child matching #{name} found on #{self}, was expecting exactly one"
+            else
+                klass.new(children.first, self)
+            end
+        end
     end
 end
+
