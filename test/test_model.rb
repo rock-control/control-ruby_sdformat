@@ -51,5 +51,22 @@ describe SDF::XML do
         end
     end
 
+    describe "#each_joint" do
+        it "does not yield anything if the model has no joint" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_joint).to_a.empty?
+        end
+        it "yields the joints otherwise" do
+            root = SDF::Model.new(REXML::Document.new("<model><joint name=\"0\" /><joint name=\"1\" /></model>").root)
+
+            joints = root.enum_for(:each_joint).to_a
+            assert_equal 2, joints.size
+            joints.each do |l|
+                assert_kind_of SDF::Joint, l
+                assert_equal root.xml.elements.to_a("joint[@name=\"#{l.name}\"]"), [l.xml]
+            end
+        end
+    end
+
 end
 

@@ -26,6 +26,16 @@ module SDF
                 yield(Link.new(element, self))
             end
         end
+
+        # Enumerates this model's joints
+        #
+        # @yieldparam [Joint] joint
+        def each_joint
+            return enum_for(__method__) if !block_given?
+            xml.elements.each('joint') do |element|
+                yield(Joint.new(element, self))
+            end
+        end
     end
 end
 

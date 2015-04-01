@@ -6,6 +6,7 @@ require 'sdf/root'
 require 'sdf/world'
 require 'sdf/model'
 require 'sdf/link'
+require 'sdf/joint'
 
 # The toplevel namespace for sdf
 #
