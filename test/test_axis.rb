@@ -13,13 +13,17 @@ module SDF
         describe "limit" do
             it "creats a tag with defaults if there is none" do
                 xml = REXML::Document.new("<axis />").root
-                limit = Axis.new(xml).limit
+                axis = Axis.new(xml)
+                limit = axis.limit
                 assert_kind_of AxisLimit, limit
+                assert_same axis, limit.parent
             end
             it "returns the Limit object for the tag" do
                 xml = REXML::Document.new("<axis><limit /></axis>").root
-                limit = Axis.new(xml).limit
+                axis = Axis.new(xml)
+                limit = axis.limit
                 assert_kind_of AxisLimit, limit
+                assert_same axis, limit.parent
                 assert_equal xml.elements['limit'], limit.xml
             end
         end

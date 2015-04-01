@@ -46,6 +46,7 @@ describe SDF::XML do
             assert_equal 2, links.size
             links.each do |l|
                 assert_kind_of SDF::Link, l
+                assert_same root, l.parent
                 assert_equal root.xml.elements.to_a("link[@name=\"#{l.name}\"]"), [l.xml]
             end
         end
@@ -63,6 +64,7 @@ describe SDF::XML do
             assert_equal 2, joints.size
             joints.each do |l|
                 assert_kind_of SDF::Joint, l
+                assert_same root, l.parent
                 assert_equal root.xml.elements.to_a("joint[@name=\"#{l.name}\"]"), [l.xml]
             end
         end

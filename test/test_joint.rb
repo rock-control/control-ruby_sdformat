@@ -85,8 +85,10 @@ module SDF
             end
             it "returns an Axis object for the axis tag" do
                 xml = REXML::Document.new("<joint><axis /></joint>").root
-                axis = Joint.new(xml).axis
+                joint = Joint.new(xml)
+                axis = joint.axis
                 assert_kind_of Axis, axis
+                assert_same joint, axis.parent
                 assert_equal xml.elements['axis'], axis.xml
             end
         end

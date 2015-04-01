@@ -14,6 +14,7 @@ module SDF
                 assert_equal 2, models.size
                 models.each do |l|
                     assert_kind_of SDF::Model, l
+                    assert_same root, l.parent
                     assert_equal root.xml.elements.to_a("model[@name=\"#{l.name}\"]"), [l.xml]
                 end
             end
