@@ -75,6 +75,20 @@ module SDF
                 klass.new(children.first, self)
             end
         end
+
+        def ==(other)
+            self.class == other.class &&
+                xml == other.xml
+        end
+
+        def eql?(other)
+            self.class == other.class &&
+                xml == other.xml
+        end
+
+        def hash
+            xml.hash
+        end
     end
 end
 

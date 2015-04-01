@@ -70,5 +70,54 @@ module SDF
                 end
             end
         end
+
+        describe "#==" do
+            it "returns true if the two elements have the same XML and class" do
+                xml = REXML::Document.new
+                el0 = Element.new(xml)
+                el1 = Element.new(xml)
+                assert_equal el0, el1
+            end
+            it "returns false if the two elements have different classes" do
+                xml = REXML::Document.new
+                el0 = Element.new(xml)
+                el1 = Class.new(Element).new(xml)
+                refute_equal el0, el1
+            end
+            it "returns false if the two elements have different xml" do
+                el0 = Element.new(REXML::Document.new)
+                el1 = Element.new(REXML::Document.new)
+                refute_equal el0, el1
+            end
+            it "returns false for an arbitrary object" do
+                el0 = Element.new(REXML::Document.new)
+                refute_equal Object.new, el0
+            end
+        end
+
+        describe "behaviour as hash key" do
+            it "matches as a hash key against an object that has the same class and xml" do
+                hash = Hash.new
+                xml = REXML::Document.new
+                el0 = Element.new(xml)
+                hash[el0] = 10
+                assert_equal 10, hash[Element.new(xml)]
+            end
+            it "does not match as a hash key against an object that has the same class and but different xml" do
+                hash = Hash.new
+                el0 = Element.new(REXML::Document.new)
+                el1 = Element.new(REXML::Document.new)
+                hash[el0] = 10
+                assert !hash.has_key?(el1)
+            end
+            it "does not match as a hash key against an object that has different class and same xml" do
+                hash = Hash.new
+                xml = REXML::Document.new
+                el0 = Element.new(xml)
+                el1 = Class.new(Element).new(xml)
+                hash[el0] = 10
+                assert !hash.has_key?(el1)
+            end
+        end
     end
 end
