@@ -14,6 +14,8 @@ module SDF
         def self.load_from_model_name(model_name, sdf_version = nil)
             new(XML.model_from_name(model_name, sdf_version).elements.to_a('sdf/model').first)
         end
+
+        include Tools::Pose
     end
 end
 

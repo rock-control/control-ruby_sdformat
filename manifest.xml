@@ -7,4 +7,5 @@
   <depend package="hoe" />
   <depend package="hoe-yard" />
   <depend package="utilrb" />
+  <depend package="base/types" />
 </package>

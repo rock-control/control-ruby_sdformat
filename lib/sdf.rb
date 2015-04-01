@@ -1,4 +1,6 @@
+require 'eigen'
 require 'sdf/xml'
+require 'sdf/tools'
 require 'sdf/element'
 require 'sdf/root'
 require 'sdf/model'
