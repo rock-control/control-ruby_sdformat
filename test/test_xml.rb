@@ -25,6 +25,11 @@ describe SDF::XML do
             model = sdf.elements.enum_for(:each, 'sdf/model').first
             assert_equal('versioned model 1.5', model.attributes['name'])
         end
+        it "handles unversioned config files" do
+            sdf = SDF::XML.load_gazebo_model(File.join(models_dir, "model_without_version"))
+            model = sdf.elements.enum_for(:each, 'sdf/model').first
+            assert_equal('model without version', model.attributes['name'])
+        end
         it "returns the latest version matching max_version if provided" do
             sdf = SDF::XML.load_gazebo_model(
                 File.join(models_dir, "versioned_model"),
@@ -44,7 +49,7 @@ describe SDF::XML do
     describe "gazebo_models" do
         it "loads all models available in the path" do
             models = SDF::XML.gazebo_models
-            assert_equal 4, models.size
+            assert_equal 5, models.size
 
             assert(sdf = models['simple_model'])
             model = sdf.elements.enum_for(:each, 'sdf/model').first
@@ -60,7 +65,7 @@ describe SDF::XML do
             # versions
             SDF::XML.gazebo_models
             models = SDF::XML.gazebo_models(130)
-            assert_equal 1, models.size
+            assert_equal 2, models.size
 
             assert(sdf = models['versioned_model'])
             model = sdf.elements.enum_for(:each, 'sdf/model').first

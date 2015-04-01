@@ -89,7 +89,7 @@ module SDF
             end
 
             sdf = config.elements.enum_for(:each, 'model/sdf').map do |sdf_element|
-                version = Float(sdf_element.attributes['version'])
+                version = Float(sdf_element.attributes['version'] || 0)
                 version = (version * 100).round
                 [version, File.join(dir, sdf_element.text)]
             end
