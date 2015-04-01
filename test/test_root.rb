@@ -61,14 +61,6 @@ describe SDF::XML do
             end
             assert_equal(['first model', 'second model', 'simple test model'], model_names.sort)
         end
-        it "load each models children from parent" do
-            root = SDF::Root.load(File.join(models_dir, "model_with_includes", "model.sdf"))
-            model_names = [];
-            root.each_model_from('sdf') do |m|
-                model_names << m.name
-            end
-            assert_equal(['first model', 'second model', 'simple test model'], model_names.sort)
-        end
         it "calls load_from_model_name if given a URI" do
             version = flexmock
             flexmock(SDF::Root).should_receive(:load_from_model_name).once.with('model_in_uri', version).and_return(obj = flexmock)
