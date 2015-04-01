@@ -20,6 +20,19 @@ module SDF
             @joint = model.child_by_name("joint", Joint)
         end
 
+        describe "#type" do
+            it "raises Invalid if the type attribute does not exist" do
+                xml = REXML::Document.new("<root />").root
+                assert_raises(Invalid) do
+                    Joint.new(xml).type
+                end
+            end
+            it "returns the type as a string" do
+                xml = REXML::Document.new("<root type='revolute'/>").root
+                assert_equal 'revolute', Joint.new(xml).type
+            end
+        end
+
         describe "#pose" do
             it "returns the joint's pose" do
                 xml = REXML::Document.new("<joint><pose>1 2 3 0 0 90</pose></joint>").root
@@ -31,6 +44,10 @@ module SDF
         end
 
         describe "#parent_link" do
+            it "raises Invalid if there is no parent element" do
+                xml = REXML::Document.new("<joint />").root
+                assert_raises(Invalid) { Joint.new(xml).parent_link }
+            end
             it "returns the Link object that is the joint's parent" do
                 assert_equal model.child_by_name('link[@name="parent_l"]', Link),
                     joint.parent_link
@@ -43,6 +60,10 @@ module SDF
             end
         end
         describe "#child_link" do
+            it "raises Invalid if there is no parent element" do
+                xml = REXML::Document.new("<joint />").root
+                assert_raises(Invalid) { Joint.new(xml).child_link }
+            end
             it "returns the Link object that is the joint's child" do
                 assert_equal model.child_by_name('link[@name="child_l"]', Link),
                     joint.child_link
