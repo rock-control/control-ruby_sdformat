@@ -54,6 +54,21 @@ module SDF
                 end
             end
         end
+
+        describe "axis" do
+            it "raises Invalid if there is no axis tag" do
+                xml = REXML::Document.new("<joint />").root
+                assert_raises(Invalid) do
+                    Joint.new(xml).axis
+                end
+            end
+            it "returns an Axis object for the axis tag" do
+                xml = REXML::Document.new("<joint><axis /></joint>").root
+                axis = Joint.new(xml).axis
+                assert_kind_of Axis, axis
+                assert_equal xml.elements['axis'], axis.xml
+            end
+        end
     end
 end
 

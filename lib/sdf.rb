@@ -7,6 +7,8 @@ require 'sdf/world'
 require 'sdf/model'
 require 'sdf/link'
 require 'sdf/joint'
+require 'sdf/axis'
+require 'sdf/axis_limit'
 
 # The toplevel namespace for sdf
 #
