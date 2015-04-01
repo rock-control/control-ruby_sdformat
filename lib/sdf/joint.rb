@@ -1,7 +1,5 @@
 module SDF
     class Joint < Element
-        include Tools::Pose
-
         # The joint type
         def type
             if t = xml.attributes['type']
@@ -9,6 +7,13 @@ module SDF
             else
                 raise Invalid, "expected attribute 'type' missing on #{self}"
             end
+        end
+
+        # The model's pose w.r.t. its parent
+        #
+        # @return [Array<Float>]
+        def pose
+            EigenConversions.pose_to_eigen(xml.elements["pose"])
         end
 
         # The joint's parent link

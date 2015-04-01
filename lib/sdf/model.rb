@@ -15,7 +15,12 @@ module SDF
             new(XML.model_from_name(model_name, sdf_version).elements.to_a('sdf/model').first)
         end
 
-        include Tools::Pose
+        # The model's pose w.r.t. its parent
+        #
+        # @return [Array<Float>]
+        def pose
+            EigenConversions.pose_to_eigen(xml.elements["pose"])
+        end
 
         # Whether the model is static
         def static?
