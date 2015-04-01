@@ -51,13 +51,15 @@ module SDF
             (Float(xml.attributes['version']) * 100).round
         end
 
-        # Enumerates the SDF models that are direct children of this root
+        # Enumerates the toplevel models
+        #
+        # @yieldparam [Model] model
         def each_model
+            return enum_for(__method__) if !block_given?
             xml.elements.each('sdf/model') do |element|
                 yield(Model.new(element, self))
             end
         end
-        
 
         # Enumerates the toplevel worlds
         #
