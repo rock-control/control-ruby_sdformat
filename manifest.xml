@@ -1,7 +1,7 @@
 <package>
   <description brief="Library to read SDF files from Ruby">
   </description>
-  <author>Sylvain Joyeux/sylvain.joyeux@m4x.org</author>
+  <maintainer>Sylvain Joyeux/sylvain.joyeux@m4x.org</maintainer>
   <license>LGPLv3 or later</license>
 
   <depend package="hoe" />
