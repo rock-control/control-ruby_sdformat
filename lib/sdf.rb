@@ -3,7 +3,9 @@ require 'sdf/xml'
 require 'sdf/tools'
 require 'sdf/element'
 require 'sdf/root'
+require 'sdf/world'
 require 'sdf/model'
+require 'sdf/link'
 
 # The toplevel namespace for sdf
 #

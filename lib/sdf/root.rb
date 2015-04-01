@@ -50,14 +50,15 @@ module SDF
             end
         end
         
-        # Enumerates the SDF models that are children of this parent
+
+        # Enumerates the toplevel worlds
         #
-        #@param [String] parent tag name
-        def each_model_from(parent)
-            xml.elements.each("#{parent}/model") do |element|
-                yield(Model.new(element, self))
-            end            
+        # @yieldparam [World] world
+        def each_world
+            return enum_for(__method__) if !block_given?
+            xml.elements.each('sdf/world') do |element|
+                yield(World.new(element, self))
+            end
         end
-        
     end
 end

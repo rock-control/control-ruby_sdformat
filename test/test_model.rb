@@ -34,5 +34,22 @@ describe SDF::XML do
         end
     end
 
+    describe "#each_link" do
+        it "does not yield anything if the model has no link" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_link).to_a.empty?
+        end
+        it "yields the links otherwise" do
+            root = SDF::Model.new(REXML::Document.new("<model><link name=\"0\" /><link name=\"1\" /></model>").root)
+
+            links = root.enum_for(:each_link).to_a
+            assert_equal 2, links.size
+            links.each do |l|
+                assert_kind_of SDF::Link, l
+                assert_equal root.xml.elements.to_a("link[@name=\"#{l.name}\"]"), [l.xml]
+            end
+        end
+    end
+
 end
 

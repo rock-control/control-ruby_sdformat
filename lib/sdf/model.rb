@@ -16,6 +16,16 @@ module SDF
         end
 
         include Tools::Pose
+
+        # Enumerates this model's links
+        #
+        # @yieldparam [Link] link
+        def each_link
+            return enum_for(__method__) if !block_given?
+            xml.elements.each('link') do |element|
+                yield(Link.new(element, self))
+            end
+        end
     end
 end
 

@@ -71,5 +71,21 @@ describe SDF::XML do
         end
     end
 
+    describe "each_world" do
+        it "does not yield anything if no worlds are defined" do
+            root = SDF::Root.new(REXML::Document.new("<sdf></sdf>").root)
+            assert root.enum_for(:each_world).to_a.empty?
+        end
+        it "yields the worlds otherwise" do
+            root = SDF::Root.new(REXML::Document.new("<sdf><world name=\"w0\" /><world name=\"w1\" /></sdf>"))
+
+            worlds = root.enum_for(:each_world).to_a
+            assert_equal 2, worlds.size
+            worlds.each do |w|
+                assert_kind_of SDF::World, w
+                assert_equal root.xml.elements.to_a("sdf/world[@name=\"#{w.name}\"]"), [w.xml]
+            end
+        end
+    end
 end
 
