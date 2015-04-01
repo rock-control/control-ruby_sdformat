@@ -5,17 +5,18 @@ if ENV['TEST_ENABLE_COVERAGE'] == '1'
         require 'simplecov'
         SimpleCov.start
     rescue LoadError
-        require 'dummy_project'
+        require 'sdf'
         SDF.warn "coverage is disabled because the 'simplecov' gem cannot be loaded"
     rescue Exception => e
-        require 'dummy_project'
+        require 'sdf'
         SDF.warn "coverage is disabled: #{e.message}"
     end
 end
 
 require 'sdf'
-require 'flexmock'
+require 'minitest/autorun'
 require 'minitest/spec'
+require 'flexmock'
 
 if ENV['TEST_ENABLE_PRY'] != '0'
     begin
