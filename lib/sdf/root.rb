@@ -12,13 +12,21 @@ module SDF
 
         # Loads a SDF file
         #
-        # @param [String] sdf_file the path to the SDF file
+        # @param [String] sdf_file the path to the SDF file or a model:// URI
+        # @param [Integer,nil] expected_sdf_version if the SDF file is a
+        #   model:// URI, this is the maximum expected SDF version (as version *
+        #   100, i.e. version 1.5 is represented by 150). Leave to nil to always
+        #   read the latest.
         # @raise [Errno::ENOENT] if the files does not exist
         # @raise [XML::NotSDF] if the file is not a SDF file
         # @raise [XML::InvalidXML] if the file is not a valid XML file
         # @return [Root]
-        def self.load(sdf_file)
-            new(XML.load_sdf(sdf_file))
+        def self.load(sdf_file, expected_sdf_version = nil)
+            if sdf_file =~ /^model:\/\/(.*)/
+                return load_from_model_name($1, expected_sdf_version)
+            else
+                new(XML.load_sdf(sdf_file))
+            end
         end
 
         # Load a model from its name

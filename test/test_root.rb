@@ -38,7 +38,7 @@ describe SDF::XML do
     end
     
     describe "load" do
-        it "loads a SDF file" do
+        it "loads a SDF file if given a path" do
             root = SDF::Root.load(File.join(models_dir, "simple_model", "model.sdf"))
             model = root.xml.elements.enum_for(:each, 'sdf/model').first
             assert_equal('simple test model', model.attributes['name'])
@@ -68,6 +68,11 @@ describe SDF::XML do
                 model_names << m.name
             end
             assert_equal(['first model', 'second model', 'simple test model'], model_names.sort)
+        end
+        it "calls load_from_model_name if given a URI" do
+            version = flexmock
+            flexmock(SDF::Root).should_receive(:load_from_model_name).once.with('model_in_uri', version).and_return(obj = flexmock)
+            assert_equal obj, SDF::Root.load('model://model_in_uri', version)
         end
     end
 
