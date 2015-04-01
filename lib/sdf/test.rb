@@ -14,6 +14,7 @@ if ENV['TEST_ENABLE_COVERAGE'] == '1'
 end
 
 require 'sdf'
+require 'flexmock'
 require 'minitest/spec'
 
 if ENV['TEST_ENABLE_PRY'] != '0'
@@ -52,6 +53,15 @@ module SDF
             # Teardown code for all the tests
         end
     end
+end
+
+# Workaround a problem with flexmock and minitest not being compatible with each
+# other (currently). See github.com/jimweirich/flexmock/issues/15.
+if defined?(FlexMock) && !FlexMock::TestUnitFrameworkAdapter.method_defined?(:assertions)
+    class FlexMock::TestUnitFrameworkAdapter
+        attr_accessor :assertions
+    end
+    FlexMock.framework_adapter.assertions = 0
 end
 
 class Minitest::Test
