@@ -48,12 +48,25 @@ module SDF
             @child_link
         end
 
-        # Returns the axis of rotation for revolute joints or the axis of
-        # translation for prismatic joints
+        AXIS_CLASSES = Hash[
+            'revolute' => [RevoluteAxis],
+            'revolute2' => [RevoluteAxis, RevoluteAxis],
+            'gearbox' => [RevoluteAxis],
+            'prismatic' => [Axis],
+            'ball' => [RevoluteAxis, RevoluteAxis],
+            'universal' => [RevoluteAxis, RevoluteAxis],
+            'piston' => [Axis, RevoluteAxis]
+        ]
+
+        # Returns information about this joint's main axis
         #
-        # @return [Eigen::Vector3]
+        # @return [Axis]
         def axis
-            child_by_name('axis', Axis)
+            if axis_class = AXIS_CLASSES[type]
+                child_by_name('axis', axis_class[0])
+            else
+                raise NotImplementedError, "joint type #{type} not implemented"
+            end
         end
     end
 end

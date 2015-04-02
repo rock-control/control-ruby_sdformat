@@ -15,4 +15,25 @@ module SDF
             end
         end
     end
+
+    describe AngularAxisLimit do
+        describe "#upper" do
+            it "converts the value to radians" do
+                xml = REXML::Document.new("<root><upper>10</upper></root>").root
+                assert_equal 10 * Math::PI / 180, AngularAxisLimit.new(xml).upper
+            end
+        end
+        describe "#lower" do
+            it "converts the value to radians" do
+                xml = REXML::Document.new("<root><lower>10</lower></root>").root
+                assert_equal 10 * Math::PI / 180, AngularAxisLimit.new(xml).lower
+            end
+        end
+        describe "#velocity" do
+            it "converts the value to radians" do
+                xml = REXML::Document.new("<root><velocity>10</velocity></root>").root
+                assert_equal 10 * Math::PI / 180, AngularAxisLimit.new(xml).velocity
+            end
+        end
+    end
 end

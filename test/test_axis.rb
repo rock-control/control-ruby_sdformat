@@ -15,14 +15,27 @@ module SDF
                 xml = REXML::Document.new("<axis />").root
                 axis = Axis.new(xml)
                 limit = axis.limit
-                assert_kind_of AxisLimit, limit
+                assert_same AxisLimit, limit.class
                 assert_same axis, limit.parent
             end
             it "returns the Limit object for the tag" do
                 xml = REXML::Document.new("<axis><limit /></axis>").root
                 axis = Axis.new(xml)
                 limit = axis.limit
-                assert_kind_of AxisLimit, limit
+                assert_same AxisLimit, limit.class
+                assert_same axis, limit.parent
+                assert_equal xml.elements['limit'], limit.xml
+            end
+        end
+    end
+
+    describe RevoluteAxis do
+        describe "limit" do
+            it "returns a RevoluteAxisLimit instance" do
+                xml = REXML::Document.new("<axis><limit /></axis>").root
+                axis = RevoluteAxis.new(xml)
+                limit = axis.limit
+                assert_same AngularAxisLimit, limit.class
                 assert_same axis, limit.parent
                 assert_equal xml.elements['limit'], limit.xml
             end

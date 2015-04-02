@@ -8,4 +8,10 @@ module SDF
             child_by_name('limit', AxisLimit, false)
         end
     end
+    
+    class RevoluteAxis < Axis
+        def limit
+            child_by_name('limit', AngularAxisLimit, false)
+        end
+    end
 end
