@@ -25,19 +25,5 @@ module SDF
             read('velocity', nil)
         end
     end
-
-    class AngularAxisLimit < AxisLimit
-        def lower
-            super * Math::PI / 180
-        end
-
-        def upper
-            super * Math::PI / 180
-        end
-
-        def velocity
-            super * Math::PI / 180
-        end
-    end
 end
 

@@ -84,20 +84,12 @@ module SDF
                 end
             end
             it "returns an Axis object for the axis tag" do
-                xml = REXML::Document.new("<joint type='revolute'><axis /></joint>").root
+                xml = REXML::Document.new("<joint><axis /></joint>").root
                 joint = Joint.new(xml)
                 axis = joint.axis
                 assert_kind_of Axis, axis
                 assert_same joint, axis.parent
                 assert_equal xml.elements['axis'], axis.xml
-            end
-            it "returns Axis for a prismatic axis" do
-                xml = REXML::Document.new("<joint type='prismatic'><axis /></joint>").root
-                assert_same Axis, Joint.new(xml).axis.class
-            end
-            it "returns RevoluteAxis for a revolute axis" do
-                xml = REXML::Document.new("<joint type='revolute'><axis /></joint>").root
-                assert_kind_of RevoluteAxis, Joint.new(xml).axis
             end
         end
 
