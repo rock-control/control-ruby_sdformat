@@ -57,16 +57,20 @@ module SDF
         end
 
         # Compute this joint's transform based on the joint value(s)
-        def transform_for(value, value2 = nil)
+        #
+        # @return [Isometry3]
+        def transform_for(value, value2 = nil, xyz = self.axis.xyz)
+            p = Eigen::Isometry3.new
             if type == 'revolute'
-                return Eigen::Vector3.Zero, Eigen::Quaternion.from_angle_axis(value, axis.xyz)
+                p.rotate(Eigen::Quaternion.from_angle_axis(value, xyz))
             elsif type == 'prismatic'
-                return axis.xyz * value, Eigen::Quaternion.Identity
+                p.translate(xyz * value)
             elsif AXIS_CLASSES.has_key?(type)
                 raise NotImplementedError, "joint type #{type} not implemented"
             else
                 raise ArgumentError, "invalid joint type #{type}"
             end
+            return p
         end
     end
 end

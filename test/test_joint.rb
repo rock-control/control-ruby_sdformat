@@ -97,16 +97,16 @@ module SDF
             it "computes the transformation of revolute joints" do
                 xml = REXML::Document.new("<joint type='revolute'><axis><xyz>1 0 0</xyz></axis></joint>").root
                 joint = Joint.new(xml)
-                v, q = joint.transform_for(1)
-                assert_equal Eigen::Vector3.Zero, v
-                assert Eigen::Quaternion.from_angle_axis(1, Eigen::Vector3.UnitX).approx?(q)
+                t = joint.transform_for(1)
+                assert_equal Eigen::Vector3.Zero, t.translation
+                assert Eigen::Quaternion.from_angle_axis(1, Eigen::Vector3.UnitX).approx?(t.rotation)
             end
             it "computes the transformation of prismatic joints" do
                 xml = REXML::Document.new("<joint type='prismatic'><axis><xyz>1 0 0</xyz></axis></joint>").root
                 joint = Joint.new(xml)
-                v, q = joint.transform_for(2)
-                assert Eigen::Vector3.new(2, 0, 0).approx?(v)
-                assert Eigen::Quaternion.Identity.approx?(q)
+                t = joint.transform_for(2)
+                assert Eigen::Vector3.new(2, 0, 0).approx?(t.translation)
+                assert Eigen::Quaternion.Identity.approx?(t.rotation)
             end
         end
     end
