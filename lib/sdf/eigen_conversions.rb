@@ -12,9 +12,7 @@ module SDF
                 end
                 values = pose.split(/\s+/).map { |v| Float(v) }
                 xyz = values[0, 3]
-                rpy = values[3, 3].map do |deg|
-                    deg * Math::PI / 180
-                end
+                rpy = values[3, 3]
 
                 q = Eigen::Quaternion.from_angle_axis(rpy[2], Eigen::Vector3.UnitZ) *
                     Eigen::Quaternion.from_angle_axis(rpy[1], Eigen::Vector3.UnitY) *

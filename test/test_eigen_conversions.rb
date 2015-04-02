@@ -6,10 +6,10 @@ module SDF
             attr_reader :obj
 
             it "parses a pose into a Eigen vector and quaternion" do
-                xml = REXML::Document.new("<pose>1 2 3 0 -0 90</pose>").root
+                xml = REXML::Document.new("<pose>1 2 3 0 -0 2</pose>").root
                 p = EigenConversions.pose_to_eigen(xml)
                 assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
-                assert Eigen::Quaternion.from_angle_axis(Math::PI/2, Eigen::Vector3.UnitZ).approx?(p.rotation)
+                assert Eigen::Quaternion.from_angle_axis(2, Eigen::Vector3.UnitZ).approx?(p.rotation)
             end
 
             it "returns identity if given nil" do
