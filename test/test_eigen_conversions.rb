@@ -7,15 +7,15 @@ module SDF
 
             it "parses a pose into a Eigen vector and quaternion" do
                 xml = REXML::Document.new("<pose>1 2 3 0 -0 90</pose>").root
-                v, q = EigenConversions.pose_to_eigen(xml)
-                assert Eigen::Vector3.new(1, 2, 3).approx?(v)
-                assert Eigen::Quaternion.from_angle_axis(Math::PI/2, Eigen::Vector3.UnitZ).approx?(q)
+                p = EigenConversions.pose_to_eigen(xml)
+                assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
+                assert Eigen::Quaternion.from_angle_axis(Math::PI/2, Eigen::Vector3.UnitZ).approx?(p.rotation)
             end
 
             it "returns identity if given nil" do
-                v, q = EigenConversions.pose_to_eigen(nil)
-                assert Eigen::Vector3.new(0, 0, 0).approx?(v)
-                assert Eigen::Quaternion.Identity.approx?(q)
+                p = EigenConversions.pose_to_eigen(nil)
+                assert Eigen::Vector3.new(0, 0, 0).approx?(p.translation)
+                assert Eigen::Quaternion.Identity.approx?(p.rotation)
             end
         end
     end

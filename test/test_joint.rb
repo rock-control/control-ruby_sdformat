@@ -37,9 +37,9 @@ module SDF
             it "returns the joint's pose" do
                 xml = REXML::Document.new("<joint><pose>1 2 3 0 0 90</pose></joint>").root
                 joint = Joint.new(xml)
-                v, q = joint.pose
-                assert Eigen::Vector3.new(1, 2, 3).approx?(v)
-                assert Eigen::Quaternion.from_angle_axis(Math::PI / 2, Eigen::Vector3.UnitZ).approx?(q)
+                p = joint.pose
+                assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
+                assert Eigen::Quaternion.from_angle_axis(Math::PI / 2, Eigen::Vector3.UnitZ).approx?(p.rotation)
             end
         end
 

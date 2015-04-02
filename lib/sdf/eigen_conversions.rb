@@ -4,7 +4,7 @@ module SDF
         #
         # @param [String,#text,nil] pose the pose as "x y z r p y" (as expected in SDF) or
         #   nil, in which case a zero translation and zero rotation are returned
-        # @return [(Eigen::Vector3,Eigen::Quaternion)]
+        # @return [Eigen::Isometry3]
         def self.pose_to_eigen(pose)
             if pose
                 if pose.respond_to?(:text)
@@ -20,9 +20,12 @@ module SDF
                     Eigen::Quaternion.from_angle_axis(rpy[1], Eigen::Vector3.UnitY) *
                     Eigen::Quaternion.from_angle_axis(rpy[0], Eigen::Vector3.UnitX)
 
-                return Eigen::Vector3.new(*xyz), q
+                pose = Eigen::Isometry3.new
+                pose.translate(Eigen::Vector3.new(*xyz))
+                pose.rotate(q)
+                return pose
             else
-                return Eigen::Vector3.Zero, Eigen::Quaternion.Identity
+                return Eigen::Isometry3.new
             end
         end
 

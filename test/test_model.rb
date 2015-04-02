@@ -95,9 +95,9 @@ describe SDF::XML do
         it "returns the model's pose" do
             xml = REXML::Document.new("<model><pose>1 2 3 0 0 90</pose></model>").root
             model = SDF::Model.new(xml)
-            v, q = model.pose
-            assert Eigen::Vector3.new(1, 2, 3).approx?(v)
-            assert Eigen::Quaternion.from_angle_axis(Math::PI / 2, Eigen::Vector3.UnitZ).approx?(q)
+            p = model.pose
+            assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
+            assert Eigen::Quaternion.from_angle_axis(Math::PI / 2, Eigen::Vector3.UnitZ).approx?(p.rotation)
         end
     end
 end
