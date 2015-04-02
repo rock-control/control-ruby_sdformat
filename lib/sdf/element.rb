@@ -44,7 +44,7 @@ module SDF
 
         def full_name
             if (p = parent) && (p_name = p.full_name)
-                p_name + '.' + name
+                p_name + '::' + name
             else
                 name
             end

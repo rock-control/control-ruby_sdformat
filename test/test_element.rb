@@ -29,7 +29,7 @@ module SDF
                 el0 = Element.new(xml.root.elements.first)
                 el1 = Element.new(el0.xml.elements.first, el0)
                 elp = Element.new(el1.xml.elements.first, el1)
-                assert_equal '0.1.p', elp.full_name
+                assert_equal '0::1::p', elp.full_name
             end
         end
 
