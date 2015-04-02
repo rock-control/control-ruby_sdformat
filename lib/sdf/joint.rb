@@ -68,5 +68,18 @@ module SDF
                 raise NotImplementedError, "joint type #{type} not implemented"
             end
         end
+
+        # Compute this joint's transform based on the joint value(s)
+        def transform_for(value, value2 = nil)
+            if type == 'revolute'
+                return Eigen::Vector3.Zero, Eigen::Quaternion.from_angle_axis(value, axis.xyz)
+            elsif type == 'prismatic'
+                return axis.xyz * value, Eigen::Quaternion.Identity
+            elsif AXIS_CLASSES.has_key?(type)
+                raise NotImplementedError, "joint type #{type} not implemented"
+            else
+                raise ArgumentError, "invalid joint type #{type}"
+            end
+        end
     end
 end

@@ -100,6 +100,23 @@ module SDF
                 assert_kind_of RevoluteAxis, Joint.new(xml).axis
             end
         end
+
+        describe "transform_for" do
+            it "computes the transformation of revolute joints" do
+                xml = REXML::Document.new("<joint type='revolute'><axis><xyz>1 0 0</xyz></axis></joint>").root
+                joint = Joint.new(xml)
+                v, q = joint.transform_for(1)
+                assert_equal Eigen::Vector3.Zero, v
+                assert Eigen::Quaternion.from_angle_axis(1, Eigen::Vector3.UnitX).approx?(q)
+            end
+            it "computes the transformation of prismatic joints" do
+                xml = REXML::Document.new("<joint type='prismatic'><axis><xyz>1 0 0</xyz></axis></joint>").root
+                joint = Joint.new(xml)
+                v, q = joint.transform_for(2)
+                assert Eigen::Vector3.new(2, 0, 0).approx?(v)
+                assert Eigen::Quaternion.Identity.approx?(q)
+            end
+        end
     end
 end
 
