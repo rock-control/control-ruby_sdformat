@@ -74,13 +74,50 @@ describe SDF::XML do
             assert root.enum_for(:each_world).to_a.empty?
         end
         it "yields the worlds otherwise" do
-            root = SDF::Root.new(REXML::Document.new("<sdf><world name=\"w0\" /><world name=\"w1\" /></sdf>").root)
+            root = SDF::Root.new(REXML::Document.new("<sdf><world name=\"w0\" /><world name=\"w1\"><world name=\"recursive_should_be_ignored\" /></world></sdf>").root)
 
             worlds = root.enum_for(:each_world).to_a
             assert_equal 2, worlds.size
             worlds.each do |w|
                 assert_kind_of SDF::World, w
                 assert_equal root.xml.elements.to_a("world[@name=\"#{w.name}\"]"), [w.xml]
+            end
+        end
+        it "can resolve world elements recursively" do
+            root = SDF::Root.new(REXML::Document.new("<sdf><world name=\"w0\"><world name=\"w1\" /></world></sdf>").root)
+
+            worlds = root.enum_for(:each_world, recursive: true).to_a
+            assert_equal 2, worlds.size
+            worlds.each do |w|
+                assert_kind_of SDF::World, w
+                assert_equal root.xml.elements.to_a(".//world[@name=\"#{w.name}\"]"), [w.xml]
+            end
+        end
+    end
+
+    describe "each_model" do
+        it "does not yield anything if no models are defined" do
+            root = SDF::Root.new(REXML::Document.new("<sdf></sdf>").root)
+            assert root.enum_for(:each_model).to_a.empty?
+        end
+        it "yields the models otherwise" do
+            root = SDF::Root.new(REXML::Document.new("<sdf><model name=\"w0\" /><model name=\"w1\"><model name=\"recursive_should_be_ignored\" /></model></sdf>").root)
+
+            models = root.enum_for(:each_model).to_a
+            assert_equal 2, models.size
+            models.each do |w|
+                assert_kind_of SDF::Model, w
+                assert_equal root.xml.elements.to_a("model[@name=\"#{w.name}\"]"), [w.xml]
+            end
+        end
+        it "can resolve model elements recursively" do
+            root = SDF::Root.new(REXML::Document.new("<sdf><model name=\"w0\"><model name=\"w1\" /></model></sdf>").root)
+
+            models = root.enum_for(:each_model, recursive: true).to_a
+            assert_equal 2, models.size
+            models.each do |w|
+                assert_kind_of SDF::Model, w
+                assert_equal root.xml.elements.to_a(".//model[@name=\"#{w.name}\"]"), [w.xml]
             end
         end
     end

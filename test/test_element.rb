@@ -119,5 +119,25 @@ module SDF
                 assert !hash.has_key?(el1)
             end
         end
+
+        describe "#make_parents" do
+            it "assigns the parent attribute to the root if given a direct child of the root" do
+                xml = REXML::Document.new("<sdf><world name=\"p\" /></sdf>")
+                root = SDF::Root.new(xml.root)
+                world = World.new(xml.elements.to_a('sdf/world').first)
+                assert !world.parent
+                world.make_parents(root)
+                assert_same root, world.parent
+            end
+            it "creates intermediate elements if needed" do
+                xml = REXML::Document.new("<sdf><world name=\"p\"><model name=\"m\" /></world></sdf>")
+                root = SDF::Root.new(xml.root)
+                model = SDF::Model.new(xml.elements.to_a('sdf/world/model').first)
+                model.make_parents(root)
+                assert_kind_of(World, model.parent)
+                assert_equal xml.elements.to_a('sdf/world').first, model.parent.xml
+                assert_equal root, model.parent.parent
+            end
+        end
     end
 end

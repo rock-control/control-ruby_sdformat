@@ -52,20 +52,32 @@ module SDF
         # Enumerates the toplevel models
         #
         # @yieldparam [Model] model
-        def each_model
-            return enum_for(__method__) if !block_given?
-            xml.elements.each('sdf/model') do |element|
-                yield(Model.new(element, self))
+        def each_model(recursive: false)
+            return enum_for(__method__, recursive: recursive) if !block_given?
+            xpath_query =
+                if recursive then './/model'
+                else 'model'
+                end
+            xml.elements.each(xpath_query) do |element|
+                model = Model.new(element, self)
+                model.make_parents(self)
+                yield(model)
             end
         end
 
         # Enumerates the toplevel worlds
         #
         # @yieldparam [World] world
-        def each_world
-            return enum_for(__method__) if !block_given?
-            xml.elements.each('sdf/world') do |element|
-                yield(World.new(element, self))
+        def each_world(recursive: false)
+            return enum_for(__method__, recursive: recursive) if !block_given?
+            xpath_query =
+                if recursive then './/world'
+                else 'world'
+                end
+            xml.elements.each(xpath_query) do |element|
+                world = World.new(element, self)
+                world.make_parents(self)
+                yield(world)
             end
         end
     end

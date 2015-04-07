@@ -50,6 +50,31 @@ module SDF
             xml.xpath
         end
 
+        # Create its parent elements until the provided root element is reached
+        def make_parents(root)
+            xml = self.xml
+            if xml.parent == root.xml
+                @parent = root
+            else
+                @parent = self.class.wrap(xml.parent)
+                parent.make_parents(root)
+            end
+        end
+
+        def self.wrap(xml, parent = nil)
+            xml_to_class = Hash[
+                'world' => World,
+                'model' => Model,
+                'sdf' => Root,
+                'link' => Link,
+                'joint' => Joint]
+            if klass = xml_to_class[xml.name]
+                return klass.new(xml, parent)
+            else
+                raise NotImplementedError, "don't know how to wrap a #{xml.name} XML element"
+            end
+        end
+
         def to_s
             xpath
         end
