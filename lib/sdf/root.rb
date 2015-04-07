@@ -1,14 +1,12 @@
 module SDF
     # A representation of a SDF document root
     class Root < Element
+        xml_tag_name 'sdf'
+
         # The XML document underlying this SDF document
         #
         # @return [REXML::Document]
         attr_reader :xml
-
-        def initialize(xml)
-            super
-        end
 
         # Loads a SDF file
         #
@@ -25,7 +23,7 @@ module SDF
             if sdf_file =~ /^model:\/\/(.*)/
                 return load_from_model_name($1, expected_sdf_version)
             else
-                new(XML.load_sdf(sdf_file))
+                new(XML.load_sdf(sdf_file).root)
             end
         end
 
@@ -40,7 +38,7 @@ module SDF
         #   nil to always read the latest.
         # @return [Root]
         def self.load_from_model_name(model_name, sdf_version = nil)
-            new(XML.model_from_name(model_name, sdf_version))
+            new(XML.model_from_name(model_name, sdf_version).root)
         end
 
         # The SDF version

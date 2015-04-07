@@ -17,17 +17,17 @@ describe SDF::XML do
     describe "load_from_model_name" do
         it "loads a gazebo model from name" do            
             root = SDF::Root.load_from_model_name("simple_model")
-            model = root.xml.elements.enum_for(:each, 'sdf/model').first
+            model = root.xml.elements.enum_for(:each, 'model').first
             assert_equal('simple test model', model.attributes['name'])
         end
         it "returns the latest SDF version if max_version is nil" do                
             root = SDF::Root.load_from_model_name("versioned_model")
-            model = root.xml.elements.enum_for(:each, 'sdf/model').first
+            model = root.xml.elements.enum_for(:each, 'model').first
             assert_equal('versioned model 1.5', model.attributes['name'])
         end
         it "returns the latest version matching max_version if provided" do
             root = SDF::Root.load_from_model_name("versioned_model",130)
-            model = root.xml.elements.enum_for(:each, 'sdf/model').first
+            model = root.xml.elements.enum_for(:each, 'model').first
             assert_equal('versioned model 1.3', model.attributes['name'])
         end
         it "raises if the version constraint is not matched" do
@@ -40,7 +40,7 @@ describe SDF::XML do
     describe "load" do
         it "loads a SDF file if given a path" do
             root = SDF::Root.load(File.join(models_dir, "simple_model", "model.sdf"))
-            model = root.xml.elements.enum_for(:each, 'sdf/model').first
+            model = root.xml.elements.enum_for(:each, 'model').first
             assert_equal('simple test model', model.attributes['name'])
         end
         it "validates that the file is a SDF file" do
@@ -74,13 +74,13 @@ describe SDF::XML do
             assert root.enum_for(:each_world).to_a.empty?
         end
         it "yields the worlds otherwise" do
-            root = SDF::Root.new(REXML::Document.new("<sdf><world name=\"w0\" /><world name=\"w1\" /></sdf>"))
+            root = SDF::Root.new(REXML::Document.new("<sdf><world name=\"w0\" /><world name=\"w1\" /></sdf>").root)
 
             worlds = root.enum_for(:each_world).to_a
             assert_equal 2, worlds.size
             worlds.each do |w|
                 assert_kind_of SDF::World, w
-                assert_equal root.xml.elements.to_a("sdf/world[@name=\"#{w.name}\"]"), [w.xml]
+                assert_equal root.xml.elements.to_a("world[@name=\"#{w.name}\"]"), [w.xml]
             end
         end
     end
