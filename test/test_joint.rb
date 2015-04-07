@@ -22,13 +22,13 @@ module SDF
 
         describe "#type" do
             it "raises Invalid if the type attribute does not exist" do
-                xml = REXML::Document.new("<root />").root
+                xml = REXML::Document.new("<joint />").root
                 assert_raises(Invalid) do
                     Joint.new(xml).type
                 end
             end
             it "returns the type as a string" do
-                xml = REXML::Document.new("<root type='revolute'/>").root
+                xml = REXML::Document.new("<joint type='revolute'/>").root
                 assert_equal 'revolute', Joint.new(xml).type
             end
         end

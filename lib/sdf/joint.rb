@@ -1,5 +1,7 @@
 module SDF
     class Joint < Element
+        xml_tag_name 'joint'
+
         # The joint type
         def type
             if t = xml.attributes['type']

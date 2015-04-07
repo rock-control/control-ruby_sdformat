@@ -16,11 +16,23 @@ module SDF
         # @return [REXML::Element]
         attr_reader :xml
 
+        def self.xml_tag_name(*args)
+            if args.empty?
+                @xml_tag_name
+            else
+                @xml_tag_name = args.first
+            end
+        end
+
         # Create a new element
         #
         # @param [REXML::Element] xml the XML element
         # @param [Element] parent the SDF element parent of this one
         def initialize(xml, parent = nil)
+            xml_tag_name = self.class.xml_tag_name
+            if xml_tag_name && xml_tag_name != xml.name
+                raise ArgumentError, "expected the XML element to be a '#{xml_tag_name}' tag, but got #{xml}"
+            end
             @xml, @parent = xml, parent
         end
 

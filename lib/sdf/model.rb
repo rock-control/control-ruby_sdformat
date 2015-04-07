@@ -1,6 +1,8 @@
 module SDF
     # Representation of a SDF model tag
     class Model < Element
+        xml_tag_name 'model'
+
         # Load a model from its name
         #
         # See {XML.find_and_load_gazebo_model}. This method raises if the model

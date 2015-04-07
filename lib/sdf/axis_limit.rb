@@ -1,5 +1,7 @@
 module SDF
     class AxisLimit < Element
+        xml_tag_name 'limit'
+
         # @api private
         def read(element_name, default_value)
             if element = xml.elements[element_name]

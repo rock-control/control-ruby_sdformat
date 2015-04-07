@@ -1,5 +1,7 @@
 module SDF
     class Axis < Element
+        xml_tag_name 'axis'
+
         def xyz
             EigenConversions.vector3_to_eigen(xml.elements['xyz'])
         end

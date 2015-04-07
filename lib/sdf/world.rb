@@ -1,5 +1,7 @@
 module SDF
     class World < Element
+        xml_tag_name 'world'
+
         # Enumerates the models from this world
         #
         # @yieldparam [Model] model
