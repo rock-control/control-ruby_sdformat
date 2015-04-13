@@ -19,5 +19,17 @@ module SDF
 
     # Exception raised when the XML does not match the SDF specification
     class Invalid < RuntimeError; end
+
+    def self.to_xml(element)
+        # Get the SDF version
+        root = element.root
+        v = root.version
+        major = v / 100
+        minor = v % 100
+        while minor != 0 && (minor % 10 == 0)
+            minor /= 10
+        end
+        "<sdf version=\"#{major}.#{minor}\">#{element.xml}</sdf>"
+    end
 end
 

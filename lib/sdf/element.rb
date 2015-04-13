@@ -36,6 +36,17 @@ module SDF
             @xml, @parent = xml, parent
         end
 
+        # The element's root
+        #
+        # @return [Element]
+        def root
+            obj = self
+            while obj.parent
+                obj = obj.parent
+            end
+            obj
+        end
+
         # The model name
         #
         # @return [String]
@@ -71,7 +82,7 @@ module SDF
             if klass = xml_to_class[xml.name]
                 return klass.new(xml, parent)
             else
-                raise NotImplementedError, "don't know how to wrap a #{xml.name} XML element"
+                raise NotImplementedError, "don't know how to wrap the #{xml.name} XML element #{xml}"
             end
         end
 
