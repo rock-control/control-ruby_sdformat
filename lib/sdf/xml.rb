@@ -131,6 +131,33 @@ module SDF
             @gazebo_models[sdf_version]
         end
 
+        ModelCacheEntry = Struct.new :path, :model
+
+        # Finds the path to the SDF for a gazebo model and SDF version
+        #
+        # @param [String] model_name the model name
+        # @!macro sdf_version
+        # @raise (see model_path_of)
+        # @raise [NoSuchModel] if the provided model name does not resolve to a
+        #   model in {model_path}
+        # @return [REXML::Element]
+        def self.model_path_from_name(model_name, sdf_version = nil)
+            @gazebo_models[sdf_version] ||= Hash.new
+            cache = (@gazebo_models[sdf_version][model_name] ||= ModelCacheEntry.new)
+            if cache.path
+                return cache.path
+            end
+
+            @model_path.each do |p|
+                model_path = File.join(p, model_name)
+                if File.file?(File.join(model_path, "model.config"))
+                    cache.path = model_path_of(model_path, sdf_version)
+                    return cache.path
+                end
+            end
+            raise NoSuchModel, "cannot find model #{model_name} in path #{model_path.join(":")}. You probably want to update the GAZEBO_MODEL_PATH environment variable, or set SDF.model_path explicitely"
+        end
+
         # Load a model by its name
         #
         # See {find_and_load_gazebo_model}. This method raises if the model
@@ -138,24 +165,31 @@ module SDF
         #
         # @param [String] model_name the model name
         # @!macro sdf_version
-        # @raise (see load_gazebo_model)
+        # @raise (see load_sdf)
         # @raise [NoSuchModel] if the provided model name does not resolve to a
         #   model in {model_path}
         # @return [REXML::Element]
         def self.model_from_name(model_name, sdf_version = nil)
-            @gazebo_models[sdf_version] ||= Hash.new
-            if model = @gazebo_models[sdf_version][model_name]
-                return model
-            end
+            path = model_path_from_name(model_name, sdf_version)
+            cache = @gazebo_models[sdf_version][model_name]
+            cache.model ||= load_sdf(path)
+            return cache.model
+        end
 
-            @model_path.each do |p|
-                model_path = File.join(p, model_name)
-                if File.file?(File.join(model_path, "model.config"))
-                    sdf = load_gazebo_model(model_path, sdf_version)
-                    return (@gazebo_models[sdf_version][model_name] = sdf)
+        def self.resolve_relative_uris(node, sdf_version, base_path)
+            node.elements.each('//uri') do |uri|
+                if uri.text =~ /^model:\/\/(\w+)(?:\/(.*))?/
+                    model_name, file_name = $1, $2
+                    sdf_path = model_path_from_name(model_name, sdf_version)
+                    if file_name
+                        uri.text = File.join(File.dirname(sdf_path), file_name)
+                    else
+                        uri.text = File.dirname(sdf_path)
+                    end
+                elsif uri.text[0,1] != '/' # Relative path
+                    uri.text = File.expand_path(uri.text, base_path)
                 end
             end
-            raise NoSuchModel, "cannot find model #{model_name} in path #{model_path.join(":")}. You probably want to update the GAZEBO_MODEL_PATH environment variable, or set SDF.model_path explicitely"
         end
 
         # Resolves the include tags children of an element
@@ -166,17 +200,19 @@ module SDF
         # @param [REXML::Element] root element to find include tags
         # @!macro sdf_version
         # @return [void]
-        def self.add_include_tags(elem, sdf_version = nil)            
+        def self.add_include_tags(elem, sdf_version) 
             replacements = []
             elem.elements.each("include") do |inc|
                 inc.elements.each("uri") do |uri|
                     if uri.text =~ /^model:\/\/(.*)$/
                         model_name = $1
+                        included_sdf = model_from_name(model_name, sdf_version)
+                    elsif File.directory?(uri.text)
+                        included_sdf = load_gazebo_model(uri.text, sdf_version)
                     else
                         raise ArgumentError, "cannot interpret include URI #{uri}"
                     end
                                        
-                    included_sdf = model_from_name(model_name, sdf_version)
                     replacements << [inc, included_sdf.root.elements]
                 end
             end
@@ -234,17 +270,14 @@ module SDF
         # @raise [InvalidXML] if the file is not a valid XML file
         # @return [REXML::Element]
         def self.load_sdf(sdf_file)
-            
             sdf = load_sdf_raw(sdf_file)
-            
             sdf_version = sdf_version_of(sdf)
             
+            resolve_relative_uris(sdf.root, sdf_version, File.dirname(sdf_file))
             add_include_tags(sdf.root, sdf_version)
-            
             sdf.root.elements.each('world') do |e|
                 add_include_tags(e, sdf_version)
             end
-            
             sdf.root.elements.each('model') do |e|
                 add_include_tags(e, sdf_version)
             end
