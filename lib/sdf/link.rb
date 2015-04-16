@@ -6,7 +6,7 @@ module SDF
         #
         # @return [Array<Float>]
         def pose
-            EigenConversions.pose_to_eigen(xml.elements["pose"])
+            Conversions.pose_to_eigen(xml.elements["pose"])
         end
     end
 end

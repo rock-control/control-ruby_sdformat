@@ -1,5 +1,5 @@
 module SDF
-    module EigenConversions
+    module Conversions
         # Converts a SDF pose to an eigen vector3 and Quaternion
         #
         # @param [String,#text,nil] pose the pose as "x y z r p y" (as expected in SDF) or
@@ -41,6 +41,24 @@ module SDF
                 return Eigen::Vector3.new(*values)
             else
                 return Eigen::Vector3.Zero
+            end
+        end
+
+        # Converts a SDF boolean into a Ruby true/false value
+        #
+        # @param [String,#text] pose the pose as "x y z" (as expected in SDF) or
+        #   nil, in which case a zero translation is returned
+        # @return [Boolean]
+        def self.to_boolean(xml)
+            if xml.respond_to?(:text)
+                xml = xml.text
+            end
+            if xml == 'true'
+                true
+            elsif xml == 'false'
+                false
+            else
+                raise Invalid, "invalid boolean value #{xml}, expected true or false"
             end
         end
     end

@@ -21,20 +21,13 @@ module SDF
         #
         # @return [Array<Float>]
         def pose
-            EigenConversions.pose_to_eigen(xml.elements["pose"])
+            Conversions.pose_to_eigen(xml.elements["pose"])
         end
 
         # Whether the model is static
         def static?
-            if static = xml.elements.to_a('static').first
-                static = static.text.strip
-                if static == '1'
-                    true
-                elsif static == '0'
-                    false
-                else
-                    raise Invalid, "invalid boolean value for the static field of #{self}, expected '0' or '1' and got #{static}"
-                end
+            if static = xml.elements['static']
+                Conversions.to_boolean(static)
             else
                 false
             end

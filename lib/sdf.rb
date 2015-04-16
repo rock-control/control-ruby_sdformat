@@ -1,6 +1,6 @@
 require 'eigen'
 require 'sdf/xml'
-require 'sdf/eigen_conversions'
+require 'sdf/conversions'
 require 'sdf/element'
 require 'sdf/root'
 require 'sdf/world'
