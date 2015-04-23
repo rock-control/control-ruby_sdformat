@@ -238,9 +238,14 @@ module SDF
                 begin
                     REXML::Document.new(io)
                 rescue REXML::ParseException => e
-                    raise InvalidXML, e.message
+                    raise InvalidXML, "cannot load #{sdf_file}: #{e.message}"
                 end
             end
+
+            if !sdf.root
+                raise InvalidXML, "#{sdf_file} does not look like a XML file"
+            end
+
             if sdf.root.name != 'sdf' && sdf.root.name != 'gazebo'
                 raise NotSDF, "#{sdf_file} is not a SDF file"
             end
