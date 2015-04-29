@@ -3,12 +3,12 @@ module SDF
         xml_tag_name 'axis'
 
         def xyz
-            EigenConversions.vector3_to_eigen(xml.elements['xyz'])
+            Conversions.vector3_to_eigen(xml.elements['xyz'])
         end
 
         def use_parent_model_frame?
             if flag = xml.elements['use_parent_model_frame']
-                flag.text == '1'
+                Conversions.to_boolean(flag)
             else
                 false
             end

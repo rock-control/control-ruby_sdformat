@@ -49,7 +49,7 @@ describe SDF::XML do
     describe "gazebo_models" do
         it "loads all models available in the path" do
             models = SDF::XML.gazebo_models
-            assert_equal 5, models.size
+            assert_equal 8, models.size
 
             assert(sdf = models['simple_model'])
             model = sdf.elements.enum_for(:each, 'sdf/model').first
@@ -99,6 +99,21 @@ describe SDF::XML do
             assert_equal(
                 ['first model', 'second model', 'simple test model'],
                 model_names.sort)
+        end
+        it "resolves relative paths in <uri> tags" do
+            sdf = SDF::XML.load_sdf(File.join(models_dir, "model_with_relative_uris", "model.sdf"))
+            uri = sdf.elements.to_a('//uri').first
+            assert_equal(File.join(models_dir, 'model_with_relative_uris', 'visual.dae'), uri.text)
+        end
+        it "properly resolves relative paths in <uri> tags from included models" do
+            sdf = SDF::XML.load_sdf(File.join(models_dir, "model_that_includes_a_model_with_relative_paths", "model.sdf"))
+            uri = sdf.elements.to_a('//uri').first
+            assert_equal(File.join(models_dir, 'model_with_relative_uris', 'visual.dae'), uri.text)
+        end
+        it "resolves model:// in <uri> tags" do
+            sdf = SDF::XML.load_sdf(File.join(models_dir, "model_with_model_uris", "model.sdf"))
+            uri = sdf.elements.to_a('//uri').first
+            assert_equal(File.join(models_dir, 'simple_model', 'visual.dae'), uri.text)
         end
     end
 

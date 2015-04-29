@@ -75,19 +75,10 @@ describe SDF::XML do
             xml = REXML::Document.new("<model />").root
             assert !SDF::Model.new(xml).static?
         end
-        it "returns true if a static tag contains 1" do
-            xml = REXML::Document.new("<model><static>1</static></model>").root
-            assert SDF::Model.new(xml).static?
-        end
-        it "returns true if a static tag contains 0" do
-            xml = REXML::Document.new("<model><static>0</static></model>").root
-            assert !SDF::Model.new(xml).static?
-        end
-        it "raises Invalid for any other value" do
-            xml = REXML::Document.new("<model><static>false</static></model>").root
-            assert_raises(SDF::Invalid) do
-                SDF::Model.new(xml).static?
-            end
+        it "returns the converted value if a static tag is present" do
+            xml = REXML::Document.new("<model><static>foobar</static></model>").root
+            flexmock(SDF::Conversions).should_receive(:to_boolean).once.with(xml.elements['static']).and_return(v = flexmock)
+            assert_equal v, SDF::Model.new(xml).static?
         end
     end
 

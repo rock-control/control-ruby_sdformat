@@ -137,6 +137,12 @@ module SDF
         def hash
             xml.hash
         end
+
+        # Create a new SDF document where self is the first element inside the
+        # <sdf></sdf> element
+        def make_root
+            Root.make(xml.deep_clone, root.version)
+        end
     end
 end
 

@@ -80,5 +80,24 @@ module SDF
                 yield(world)
             end
         end
+
+        # Make a XML element into a proper SDF document by adding a root node,
+        # and return the corresponding Root object
+        #
+        # @param [REXML::Element] element
+        # @return [Root]
+        def self.make(element, version = nil)
+            if version && !version.respond_to?(:to_str)
+                version = SDF.numeric_version_to_string(version)
+            end
+
+            root = REXML::Document.new
+            root = root.add_element 'sdf'
+            root.add_element element
+            if version
+                root.attributes['version'] = version
+            end
+            new(root)
+        end
     end
 end
