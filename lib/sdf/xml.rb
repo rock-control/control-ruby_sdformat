@@ -141,17 +141,17 @@ module SDF
         # @raise [NoSuchModel] if the provided model name does not resolve to a
         #   model in {model_path}
         # @return [REXML::Element]
-        def self.model_path_from_name(model_name, sdf_version = nil)
+        def self.model_path_from_name(model_name, model_path: @model_path, sdf_version: nil)
             @gazebo_models[sdf_version] ||= Hash.new
             cache = (@gazebo_models[sdf_version][model_name] ||= ModelCacheEntry.new)
             if cache.path
                 return cache.path
             end
 
-            @model_path.each do |p|
-                model_path = File.join(p, model_name)
-                if File.file?(File.join(model_path, "model.config"))
-                    cache.path = model_path_of(model_path, sdf_version)
+            model_path.each do |p|
+                model_dir = File.join(p, model_name)
+                if File.file?(File.join(model_dir, "model.config"))
+                    cache.path = model_path_of(model_dir, sdf_version)
                     return cache.path
                 end
             end
@@ -180,7 +180,7 @@ module SDF
             node.elements.each('//uri') do |uri|
                 if uri.text =~ /^model:\/\/(\w+)(?:\/(.*))?/
                     model_name, file_name = $1, $2
-                    sdf_path = model_path_from_name(model_name, sdf_version)
+                    sdf_path = model_path_from_name(model_name, sdf_version: sdf_version)
                     if file_name
                         uri.text = File.join(File.dirname(sdf_path), file_name)
                     else
