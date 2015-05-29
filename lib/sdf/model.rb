@@ -52,6 +52,16 @@ module SDF
                 yield(Joint.new(element, self))
             end
         end
+
+        # Enumerates this model's plugins
+        #
+        # @yieldparam [Plugin] plugin
+        def each_plugin
+            return enum_for(__method__) if !block_given?
+            xml.elements.each('plugin') do |element|
+                yield(Plugin.new(element, self))
+            end
+        end
     end
 end
 

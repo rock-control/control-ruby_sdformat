@@ -9,6 +9,7 @@ require 'sdf/link'
 require 'sdf/joint'
 require 'sdf/axis'
 require 'sdf/axis_limit'
+require 'sdf/plugin'
 
 # The toplevel namespace for sdf
 #
