@@ -219,6 +219,7 @@ module SDF
                     if (e.name != "uri") then
                         replacements.each do |inc, models|
                             models.each do |m|
+                                m.elements.to_a(e.name).each(&:remove)
                                 m << e.dup
                             end
                         end

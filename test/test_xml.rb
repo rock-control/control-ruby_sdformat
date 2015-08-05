@@ -100,6 +100,17 @@ describe SDF::XML do
                 ['first model', 'second model', 'simple test model'],
                 model_names.sort)
         end
+        it "injects tags children of include into the included model" do
+            sdf = SDF::XML.load_sdf(File.join(models_dir, "model_with_new_tags_in_include", "model.sdf"))
+            model = sdf.elements.enum_for(:each, 'sdf/model/pose').first
+            assert_equal "1 0 3 0 5 0", model.text
+        end
+        it "replaces tags in the included model by tags present in the include tag" do
+            sdf = SDF::XML.load_sdf(File.join(models_dir, "model_with_overriding_tags_in_include", "model.sdf"))
+            model = sdf.elements.enum_for(:each, 'sdf/model/pose').first
+            # The included model has a non-ID pose
+            assert_equal "0 0 0 0 0 0", model.text
+        end
         it "resolves relative paths in <uri> tags" do
             sdf = SDF::XML.load_sdf(File.join(models_dir, "model_with_relative_uris", "model.sdf"))
             uri = sdf.elements.to_a('//uri').first

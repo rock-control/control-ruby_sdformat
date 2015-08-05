@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+    <include>
+        <uri>model://model_with_nonid_pose</uri>
+        <pose>0 0 0 0 0 0</pose>
+    </include>
+</sdf>
