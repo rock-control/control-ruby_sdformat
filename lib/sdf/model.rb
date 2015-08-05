@@ -19,7 +19,7 @@ module SDF
 
         # The model's pose w.r.t. its parent
         #
-        # @return [Array<Float>]
+        # @return [Eigen::Isometry3]
         def pose
             Conversions.pose_to_eigen(xml.elements["pose"])
         end
