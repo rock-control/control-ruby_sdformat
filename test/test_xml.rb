@@ -49,7 +49,7 @@ describe SDF::XML do
     describe "gazebo_models" do
         it "loads all models available in the path" do
             models = SDF::XML.gazebo_models
-            assert_equal 8, models.size
+            assert_equal 11, models.size
 
             assert(sdf = models['simple_model'])
             model = sdf.elements.enum_for(:each, 'sdf/model').first
@@ -99,6 +99,17 @@ describe SDF::XML do
             assert_equal(
                 ['first model', 'second model', 'simple test model'],
                 model_names.sort)
+        end
+        it "injects tags children of include into the included model" do
+            sdf = SDF::XML.load_sdf(File.join(models_dir, "model_with_new_tags_in_include", "model.sdf"))
+            model = sdf.elements.enum_for(:each, 'sdf/model/pose').first
+            assert_equal "1 0 3 0 5 0", model.text
+        end
+        it "replaces tags in the included model by tags present in the include tag" do
+            sdf = SDF::XML.load_sdf(File.join(models_dir, "model_with_overriding_tags_in_include", "model.sdf"))
+            model = sdf.elements.enum_for(:each, 'sdf/model/pose').first
+            # The included model has a non-ID pose
+            assert_equal "0 0 0 0 0 0", model.text
         end
         it "resolves relative paths in <uri> tags" do
             sdf = SDF::XML.load_sdf(File.join(models_dir, "model_with_relative_uris", "model.sdf"))

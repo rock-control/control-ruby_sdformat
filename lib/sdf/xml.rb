@@ -170,7 +170,7 @@ module SDF
         #   model in {model_path}
         # @return [REXML::Element]
         def self.model_from_name(model_name, sdf_version = nil)
-            path = model_path_from_name(model_name, sdf_version)
+            path = model_path_from_name(model_name, sdf_version: sdf_version)
             cache = @gazebo_models[sdf_version][model_name]
             cache.model ||= load_sdf(path)
             return cache.model
@@ -219,6 +219,7 @@ module SDF
                     if (e.name != "uri") then
                         replacements.each do |inc, models|
                             models.each do |m|
+                                m.elements.to_a(e.name).each(&:remove)
                                 m << e.dup
                             end
                         end
