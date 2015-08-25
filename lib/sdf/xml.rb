@@ -238,6 +238,9 @@ module SDF
 
         # Open a SDF file and returns the XML representation
         #
+        # Unlike {.load_sdf}, this really only loads the XML information, not
+        # resolving the include tags.
+        #
         # @param [String] sdf_file the path to the SDF file
         # @raise [Errno::ENOENT] if the files does not exist
         # @raise [NotSDF] if the file is not a SDF file
@@ -277,7 +280,8 @@ module SDF
 
         # Loads a SDF file and returns the XML representation
         #
-        # This resolves the include tags in the XML representation
+        # Unlike {.load_sdf_raw}, this resolves the include tags in the XML
+        # representation
         #
         # @param [String] sdf_file the path to the SDF file
         # @raise [Errno::ENOENT] if the files does not exist
