@@ -16,7 +16,7 @@ end
 require 'sdf'
 require 'minitest/autorun'
 require 'minitest/spec'
-require 'flexmock/minitest_integration'
+require 'flexmock/minitest'
 
 if ENV['TEST_ENABLE_PRY'] != '0'
     begin
