@@ -62,6 +62,22 @@ module SDF
                 yield(Plugin.new(element, self))
             end
         end
+
+        # Enumerates the sensors contained in this model
+        #
+        # Note that sensors are children of links and joints, i.e. calling
+        # #parent on the yield sensor objects will not return self
+        #
+        # @yieldparam [Sensor] sensor
+        def each_sensor
+            return enum_for(__method__) if !block_given?
+            each_link do |l|
+                l.each_sensor { |s| yield(s) }
+            end
+            each_joint do |j|
+                j.each_sensor { |s| yield(s) }
+            end
+        end
     end
 end
 

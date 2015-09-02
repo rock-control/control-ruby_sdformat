@@ -10,6 +10,7 @@ require 'sdf/joint'
 require 'sdf/axis'
 require 'sdf/axis_limit'
 require 'sdf/plugin'
+require 'sdf/sensor'
 
 # The toplevel namespace for sdf
 #
