@@ -46,16 +46,16 @@ module SDF
 
         # Converts a SDF boolean into a Ruby true/false value
         #
-        # @param [String,#text] pose the pose as "x y z" (as expected in SDF) or
-        #   nil, in which case a zero translation is returned
+        # @param [String,#text] boolean the SDF boolean ('true','false','0',1')
         # @return [Boolean]
         def self.to_boolean(xml)
             if xml.respond_to?(:text)
                 xml = xml.text
             end
-            if xml == 'true'
+            xml.gsub!(" ","")
+            if xml == 'true' || xml == '1'
                 true
-            elsif xml == 'false'
+            elsif xml == 'false' || xml == '0'
                 false
             else
                 raise Invalid, "invalid boolean value #{xml}, expected true or false"
