@@ -107,9 +107,16 @@ describe SDF::XML do
         end
         it "replaces tags in the included model by tags present in the include tag" do
             sdf = SDF::XML.load_sdf(File.join(models_dir, "model_with_overriding_tags_in_include", "model.sdf"))
-            model = sdf.elements.enum_for(:each, 'sdf/model/pose').first
+
+            model = sdf.elements.enum_for(:each, 'sdf/model').
+                find { |el| el.attributes['name'] == 'model with non ID pose' }
             # The included model has a non-ID pose
-            assert_equal "0 0 0 0 0 0", model.text
+            assert_equal "0 0 0 0 0 0", model.elements.enum_for(:each, 'pose').first.text
+
+            model = sdf.elements.enum_for(:each, 'sdf/model').
+                find { |el| el.attributes['name'] == 'simple test model' }
+            # The included model has a non-ID pose
+            assert_equal "0 0 -20 0 0 0", model.elements.enum_for(:each, 'pose').first.text
         end
         it "resolves relative paths in <uri> tags" do
             sdf = SDF::XML.load_sdf(File.join(models_dir, "model_with_relative_uris", "model.sdf"))

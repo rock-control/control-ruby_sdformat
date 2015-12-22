@@ -212,19 +212,16 @@ module SDF
                     else
                         raise ArgumentError, "cannot interpret include URI #{uri}"
                     end
-                    replacements << [inc, included_sdf.root.elements]
-                end
-
-                inc.elements.each do |e|
-                    if (e.name != "uri") then
-                        replacements.each do |inc, models|
-                            models.each do |m|
+                    inc.elements.each do |e|
+                        if (e.name != "uri") then
+                            included_sdf.root.elements.each do |m|    
                                 m.elements.to_a(e.name).each(&:remove)
                                 m << e.dup
                             end
                         end
                     end
-               end
+                    replacements << [inc, included_sdf.root.elements]
+                end
             end
                             
             replacements.each do |inc, models|
