@@ -4,4 +4,9 @@
         <uri>model://model_with_nonid_pose</uri>
         <pose>0 0 0 0 0 0</pose>
     </include>
+
+    <include>
+        <uri>model://simple_model</uri>
+        <pose>0 0 -20 0 0 0</pose>
+    </include>
 </sdf>
