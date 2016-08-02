@@ -24,39 +24,34 @@ module SDF
         # @return Inertial struct
         Inertial = Struct.new(:pose, :mass, :inertia)
         def inertial
-            m = ixx = iyy = izz = 1
-            ixy = ixz = iyz = 0
+            mass = read_float_child_element(xml, "mass", 1)
+            ixx = read_float_child_element(xml, "ixx", 1)
+            iyy = read_float_child_element(xml, "iyy", 1)
+            izz = read_float_child_element(xml, "izz", 1)
+            ixy = read_float_child_element(xml, "ixy", 0)
+            ixz = read_float_child_element(xml, "ixz", 0)
+            iyz = read_float_child_element(xml, "iyz", 0)
             pose = Eigen::Isometry3.new
-            if xml.elements["inertial"].respond_to?(:text)
-                inertial_elements = xml.elements["inertial"]
-                if inertial_elements.elements["mass"].respond_to?(:text)
-                    mass = inertial_elements.elements["mass"].text{ |v| Float(v) }
-                end
-                if inertial_elements.elements["inertia"].respond_to?(:text)
-                    inertia = inertial_elements.elements["inertia"]
-                    if inertia.elements["ixx"].respond_to?(:text)
-                        ixx = inertia.elements["ixx"].text{ |v| Float(v) }
-                    end
-                    if inertia.elements["iyy"].respond_to?(:text)
-                        iyy = inertia.elements["iyy"].text{ |v| Float(v) }
-                    end
-                    if inertia.elements["izz"].respond_to?(:text)
-                        izz = inertia.elements["izz"].text{ |v| Float(v) }
-                    end
-                    if inertia.elements["ixy"].respond_to?(:text)
-                        ixy = inertia.elements["ixy"].text{ |v| Float(v) }
-                    end
-                    if inertia.elements["ixz"].respond_to?(:text)
-                        ixz = inertia.elements["ixz"].text{ |v| Float(v) }
-                    end
-                    if inertia.elements["iyz"].respond_to?(:text)
-                        iyz = inertia.elements["iyz"].text{ |v| Float(v) }
-                    end
-                end
-                pose = Conversions.pose_to_eigen(inertial_elements.elements["pose"])
-            end
+             if inertial_elements = xml.elements["inertial"]
+                 pose = Conversions.pose_to_eigen(inertial_elements.elements["pose"])
+             end
             inertial = Inertial.new(pose, mass, Eigen::MatrixX.from_a([ixx,ixy,ixz, ixy,iyy,iyz, ixz,iyz,izz], 3, 3, false))
             inertial
+        end
+
+        # @api private
+        #
+        # Read an element whose text can be interpreted as float
+        #
+        # @param [REXML::Element] the element whose child is looked for
+        # @param [String] xpath the xpath of the child element
+        # @param [Float] default the default value to be returned if the element is not present
+        def read_float_child_element(element, xpath, default)
+            if ret = element.elements[xpath]
+                ret = ret.text{ |v| Float(v) }
+                return ret
+            end
+            return default
         end
     end
 end
