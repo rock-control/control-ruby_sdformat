@@ -48,8 +48,7 @@ module SDF
         # @param [Float] default the default value to be returned if the element is not present
         def read_float_child_element(element, xpath, default)
             if ret = element.elements[xpath]
-                ret = ret.text{ |v| Float(v) }
-                return ret
+                return Float(ret.text)
             end
             return default
         end
