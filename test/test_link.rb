@@ -40,6 +40,27 @@ module SDF
                 assert Eigen::Quaternion.Identity.approx?(i.pose.rotation)
                 assert Eigen::MatrixX.from_a([1,0,0, 0,1,0, 0,0,1], 3, 3, false), i.inertia
             end
+
+            it "returns a true kinematic link" do
+                xml = REXML::Document.new("<link><pose>1 2 3 0 0 2</pose><kinematic>true</kinematic></link>").root
+                link = Link.new(xml)
+                k = link.kinematic
+                assert k
+            end
+
+            it "returns a false kinematic link" do
+                xml = REXML::Document.new("<link><pose>1 2 3 0 0 2</pose><kinematic>false</kinematic></link>").root
+                link = Link.new(xml)
+                k = link.kinematic
+                assert !k
+            end
+
+            it "returns a default kinematic link" do
+                xml = REXML::Document.new("<link><pose>1 2 3 0 0 2</pose></link>").root
+                link = Link.new(xml)
+                k = link.kinematic
+                assert !k
+            end
         end
     end
 end

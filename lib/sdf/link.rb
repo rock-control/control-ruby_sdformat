@@ -19,6 +19,16 @@ module SDF
             Conversions.pose_to_eigen(xml.elements["pose"])
         end
 
+        # Check if link is kinematic
+        #
+        #
+        def kinematic
+            if kinematic = xml.elements["kinematic"]
+                return Conversions.to_boolean(kinematic)
+            end
+            return false
+        end
+
         # The link's inertial.
         #
         # @return Inertial struct
