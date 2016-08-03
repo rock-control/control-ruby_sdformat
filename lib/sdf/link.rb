@@ -34,17 +34,21 @@ module SDF
         # @return Inertial struct
         Inertial = Struct.new(:pose, :mass, :inertia)
         def inertial
-            mass = read_float_child_element(xml, "mass", 1)
-            ixx = read_float_child_element(xml, "ixx", 1)
-            iyy = read_float_child_element(xml, "iyy", 1)
-            izz = read_float_child_element(xml, "izz", 1)
-            ixy = read_float_child_element(xml, "ixy", 0)
-            ixz = read_float_child_element(xml, "ixz", 0)
-            iyz = read_float_child_element(xml, "iyz", 0)
+            mass = ixx = iyy = izz = 1
+            ixy = ixz = iyz = 0
             pose = Eigen::Isometry3.new
-             if inertial_elements = xml.elements["inertial"]
-                 pose = Conversions.pose_to_eigen(inertial_elements.elements["pose"])
-             end
+            if inertial = xml.elements["inertial"]
+                mass = read_float_child_element(inertial, "mass", 1)
+                pose = Conversions.pose_to_eigen(inertial.elements["pose"])
+                if inertia = inertial.elements["inertia"]
+                    ixx = read_float_child_element(inertia, "ixx", 1)
+                    iyy = read_float_child_element(inertia, "iyy", 1)
+                    izz = read_float_child_element(inertia, "izz", 1)
+                    ixy = read_float_child_element(inertia, "ixy", 0)
+                    ixz = read_float_child_element(inertia, "ixz", 0)
+                    iyz = read_float_child_element(inertia, "iyz", 0)
+                end
+            end
             inertial = Inertial.new(pose, mass, Eigen::MatrixX.from_a([ixx,ixy,ixz, ixy,iyy,iyz, ixz,iyz,izz], 3, 3, false))
             inertial
         end
