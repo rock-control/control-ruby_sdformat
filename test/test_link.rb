@@ -10,7 +10,9 @@ module SDF
                 assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
                 assert Eigen::Quaternion.from_angle_axis(2, Eigen::Vector3.UnitZ).approx?(p.rotation)
             end
+        end
 
+        describe "#inertial" do
             it "returns the link's inertial" do
                 xml = REXML::Document.new("<link><pose>1 2 3 0 0 2</pose><inertial><pose>1 1.2 3 0 0 2</pose><mass>350.5</mass></inertial></link>").root
                 link = Link.new(xml)
@@ -40,26 +42,22 @@ module SDF
                 assert Eigen::Quaternion.Identity.approx?(i.pose.rotation)
                 assert (Eigen::MatrixX.from_a([1,0,0, 0,1,0, 0,0,1], 3, 3, false) == i.inertia)
             end
+        end
 
-            it "returns a true kinematic link" do
+        describe "#kinematic?" do
+            it "returns true if the link is explicitly set as kinematic" do
                 xml = REXML::Document.new("<link><pose>1 2 3 0 0 2</pose><kinematic>true</kinematic></link>").root
-                link = Link.new(xml)
-                k = link.kinematic
-                assert k
+                assert Link.new(xml).kinematic?
             end
 
-            it "returns a false kinematic link" do
+            it "returns false if the link is explicitely set as not kinematic" do
                 xml = REXML::Document.new("<link><pose>1 2 3 0 0 2</pose><kinematic>false</kinematic></link>").root
-                link = Link.new(xml)
-                k = link.kinematic
-                assert !k
+                assert !Link.new(xml).kinematic?
             end
 
-            it "returns a default kinematic link" do
+            it "returns false if the link does not have an explicit kinematic element" do
                 xml = REXML::Document.new("<link><pose>1 2 3 0 0 2</pose></link>").root
-                link = Link.new(xml)
-                k = link.kinematic
-                assert !k
+                assert !Link.new(xml).kinematic?
             end
         end
     end

@@ -21,12 +21,10 @@ module SDF
 
         # Check if link is kinematic
         #
-        #
-        def kinematic
+        def kinematic?
             if kinematic = xml.elements["kinematic"]
-                return Conversions.to_boolean(kinematic)
+                 Conversions.to_boolean(kinematic)
             end
-            return false
         end
 
         # The link's inertial.
@@ -49,8 +47,7 @@ module SDF
                     iyz = read_float_child_element(inertia, "iyz", 0)
                 end
             end
-            inertial = Inertial.new(pose, mass, Eigen::MatrixX.from_a([ixx,ixy,ixz, ixy,iyy,iyz, ixz,iyz,izz], 3, 3, false))
-            inertial
+            Inertial.new(pose, mass, Eigen::MatrixX.from_a([ixx,ixy,ixz, ixy,iyy,iyz, ixz,iyz,izz], 3, 3, false))
         end
 
         # @api private
