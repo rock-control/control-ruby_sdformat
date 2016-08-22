@@ -23,9 +23,20 @@ module SDF
             it "returns true for the 'true' string" do
                 xml = REXML::Document.new("<b>true</b>").root
                 assert_same true, Conversions.to_boolean(xml)
+
+                xml = REXML::Document.new("<b> true </b>").root
+                assert_same true, Conversions.to_boolean(xml)
             end
             it "returns false for the 'false' string" do
                 xml = REXML::Document.new("<b>false</b>").root
+                assert_same false, Conversions.to_boolean(xml)
+            end
+            it "returns true for the '1' string" do
+                xml = REXML::Document.new("<b>1</b>").root
+                assert_same true, Conversions.to_boolean(xml)
+            end
+            it "returns false for the '0' string" do
+                xml = REXML::Document.new("<b>0</b>").root
                 assert_same false, Conversions.to_boolean(xml)
             end
             it "raises Invalid for anything else" do
