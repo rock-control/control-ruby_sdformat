@@ -58,7 +58,7 @@ describe SDF::XML do
             assert root.enum_for(:each_joint).to_a.empty?
         end
         it "yields the joints otherwise" do
-            root = SDF::Model.new(REXML::Document.new("<model><joint name=\"0\" /><joint name=\"1\" /></model>").root)
+            root = SDF::Model.new(REXML::Document.new("<model><link name='parent' /><link name='child' /><joint name=\"0\"><parent>parent</parent><child>child</child></joint><joint name=\"1\"><parent>parent</parent><child>child</child>/></joint></model>").root)
 
             joints = root.enum_for(:each_joint).to_a
             assert_equal 2, joints.size

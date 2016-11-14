@@ -2,14 +2,22 @@ module SDF
     class Link < Element
         xml_tag_name 'link'
 
+        def initialize(xml, parent = nil)
+            super
+
+            @sensors = Array.new
+            xml.elements.each do |child|
+                if child.name == 'sensor'
+                    @sensors << Sensor.new(child, self)
+                end
+            end
+        end
+
         # Enumerates this link's sensors
         #
         # @yieldparam [Sensor] sensor
-        def each_sensor
-            return enum_for(__method__) if !block_given?
-            xml.elements.each('sensor') do |element|
-                yield(Sensor.new(element, self))
-            end
+        def each_sensor(&block)
+            @sensors.each(&block)
         end
 
         # The model's pose w.r.t. its parent
