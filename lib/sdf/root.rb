@@ -67,8 +67,8 @@ module SDF
         # Enumerates the toplevel worlds
         #
         # @yieldparam [World] world
-        def each_world(recursive: false)
-            return enum_for(__method__, recursive: recursive) if !block_given?
+        def each_world
+            return enum_for(__method__) if !block_given?
             xml.elements.each do |element|
                 if element.name == 'world'
                     yield(World.new(element, self))

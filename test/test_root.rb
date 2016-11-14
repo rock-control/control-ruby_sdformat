@@ -71,26 +71,16 @@ describe SDF::XML do
     describe "each_world" do
         it "does not yield anything if no worlds are defined" do
             root = SDF::Root.new(REXML::Document.new("<sdf></sdf>").root)
-            assert root.enum_for(:each_world).to_a.empty?
+            assert root.each_world.to_a.empty?
         end
         it "yields the worlds otherwise" do
             root = SDF::Root.new(REXML::Document.new("<sdf><world name=\"w0\" /><world name=\"w1\"><world name=\"recursive_should_be_ignored\" /></world></sdf>").root)
 
-            worlds = root.enum_for(:each_world).to_a
+            worlds = root.each_world.to_a
             assert_equal 2, worlds.size
             worlds.each do |w|
                 assert_kind_of SDF::World, w
                 assert_equal root.xml.elements.to_a("world[@name=\"#{w.name}\"]"), [w.xml]
-            end
-        end
-        it "can resolve world elements recursively" do
-            root = SDF::Root.new(REXML::Document.new("<sdf><world name=\"w0\"><world name=\"w1\" /></world></sdf>").root)
-
-            worlds = root.enum_for(:each_world, recursive: true).to_a
-            assert_equal 2, worlds.size
-            worlds.each do |w|
-                assert_kind_of SDF::World, w
-                assert_equal root.xml.elements.to_a(".//world[@name=\"#{w.name}\"]"), [w.xml]
             end
         end
     end
@@ -110,14 +100,15 @@ describe SDF::XML do
                 assert_equal root.xml.elements.to_a("model[@name=\"#{w.name}\"]"), [w.xml]
             end
         end
-        it "can resolve model elements recursively" do
-            root = SDF::Root.new(REXML::Document.new("<sdf><model name=\"w0\"><model name=\"w1\" /></model></sdf>").root)
+        it "enumerates models within a world if recursive is set" do
+            root = SDF::Root.new(REXML::Document.new("<sdf><world name=\"w\"><model name=\"child_model\"/></world><model name=\"root_model\"/></sdf>").root)
 
-            models = root.enum_for(:each_model, recursive: true).to_a
+            models = root.each_model(recursive: true).to_a
             assert_equal 2, models.size
             models.each do |w|
                 assert_kind_of SDF::Model, w
-                assert_equal root.xml.elements.to_a(".//model[@name=\"#{w.name}\"]"), [w.xml]
+                assert %w{child_model root_model}.include?(w.name)
+                assert_equal root.xml.elements.to_a("//model[@name=\"#{w.name}\"]"), [w.xml]
             end
         end
     end
