@@ -1,8 +1,9 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-    <world>
+    <model name="simple test model">
         <include>
             <uri>model://simple_model</uri>
+            <invalid></invalid>
         </include>
-    </world>
+    </model>
 </sdf>

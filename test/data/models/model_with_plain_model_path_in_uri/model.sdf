@@ -1,7 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-    <include>
+    <model name="simple test model">
         <uri>model://simple_model</uri>
-        <pose>1 0 3 0 5 0</pose>
-    </include>
+    </model>
 </sdf>

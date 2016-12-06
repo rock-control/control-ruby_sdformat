@@ -2,7 +2,7 @@
 <sdf version="1.5">
     <world>
         <include>
-            <uri>model://simple_model</uri>
+            <uri>../simple_model</uri>
         </include>
     </world>
 </sdf>
