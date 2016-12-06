@@ -82,6 +82,16 @@ describe SDF::XML do
             model = sdf.elements.enum_for(:each, 'sdf/model').first
             assert_equal('simple test model', model.attributes['name'])
         end
+        it "validates that the file is a XML file" do
+            assert_raises(SDF::XML::InvalidXML) do
+                SDF::XML.load_sdf(File.join(models_dir, "not_xml.xml"))
+            end
+        end
+        it "validates that the file has a root" do
+            assert_raises(SDF::XML::NotSDF) do
+                SDF::XML.load_sdf(File.join(models_dir, "no_root.xml"))
+            end
+        end
         it "validates that the file is a SDF file" do
             assert_raises(SDF::XML::NotSDF) do
                 SDF::XML.load_sdf(File.join(models_dir, "not_sdf.xml"))
@@ -254,6 +264,18 @@ describe SDF::XML do
             assert_equal('versioned model 1.5', model.attributes['name'])
             model = sdf2.elements.enum_for(:each, 'sdf/model').first
             assert_equal('versioned model 1.3', model.attributes['name'])
+        end
+        it "raises if the model cannot be found" do
+            exception = assert_raises(SDF::XML::NoSuchModel) do
+                SDF::XML.model_from_name('does_not_exist')
+            end
+            assert_match /cannot find model does_not_exist in path .*. You probably want to update the GAZEBO_MODEL_PATH environment variable, or set SDF.model_path explicitely/, exception.message
+        end
+        it "raises if the model can be found, but not for the expected version" do
+            exception = assert_raises(SDF::XML::UnavailableSDFVersionInModel) do
+                SDF::XML.model_from_name('versioned_model', 100)
+            end
+            assert_equal "gazebo model in #{File.join(models_dir, 'versioned_model')} does not offer a SDF file matching version 100", exception.message
         end
     end
 end

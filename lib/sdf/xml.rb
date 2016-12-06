@@ -307,7 +307,7 @@ module SDF
             end
 
             if !sdf.root
-                raise InvalidXML, "#{sdf_file} does not look like a XML file"
+                raise NotSDF, "#{sdf_file} can be parsed as an XML file, but it does not have a root"
             end
 
             if sdf.root.name != 'sdf' && sdf.root.name != 'gazebo'

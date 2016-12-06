@@ -19,6 +19,21 @@ module SDF
             end
         end
 
+        describe "vector3_to_eigen" do
+            attr_reader :obj
+
+            it "parses a 3-float into a Eigen vector" do
+                xml = REXML::Document.new("<pose>1 2 3</pose>").root
+                v = Conversions.vector3_to_eigen(xml)
+                assert Eigen::Vector3.new(1, 2, 3).approx?(v)
+            end
+
+            it "returns identity if given nil" do
+                v = Conversions.vector3_to_eigen(nil)
+                assert Eigen::Vector3.new(0, 0, 0).approx?(v)
+            end
+        end
+
         describe 'to_boolean' do
             it "returns true for the 'true' string" do
                 xml = REXML::Document.new("<b>true</b>").root
