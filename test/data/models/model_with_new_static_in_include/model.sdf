@@ -3,6 +3,7 @@
     <world>
         <include>
             <uri>model://simple_model</uri>
+            <static>true</static>
         </include>
     </world>
 </sdf>

@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
     <model name="simple test model">
-        <uri>visual.dae</uri>
+        <pose>1 1 1 1 1 1</pose>
     </model>
 </sdf>

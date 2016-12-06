@@ -1,12 +1,15 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-    <include>
-        <uri>model://model_with_nonid_pose</uri>
-        <pose>0 0 0 0 0 0</pose>
-    </include>
+    <world>
+        <include>
+            <uri>model://model_with_nonid_pose</uri>
+            <pose>0 0 0 0 0 0</pose>
+        </include>
 
-    <include>
-        <uri>model://simple_model</uri>
-        <pose>0 0 -20 0 0 0</pose>
-    </include>
+        <include>
+            <uri>model://simple_model</uri>
+            <pose>0 0 -20 0 0 0</pose>
+        </include>
+    </world>
 </sdf>
+    

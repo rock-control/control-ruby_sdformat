@@ -180,6 +180,7 @@ module SDF
             nodes = [node]
             while !nodes.empty?
                 n = nodes.shift
+                next if n.name == 'include' # includes are handled differently
                 if n.name == 'uri'
                     if n.text =~ /^model:\/\/(\w+)(?:\/(.*))?/
                         model_name, file_name = $1, $2
@@ -197,6 +198,27 @@ module SDF
             end
         end
 
+        INCLUDE_CHILDREN_ELEMENTS = %w{static pose}
+
+        # @api private
+        #
+        # Deep copy of a REXML tree, needed when including models in models
+        def self.deep_copy_xml(node)
+            result = node.clone
+            queue = [node, result]
+            while !queue.empty?
+                old = queue.shift
+                new = queue.shift
+                old.elements.each do |old_child|
+                    new_child = old_child.clone
+                    new_child.text = old_child.text
+                    new << new_child
+                    queue << old_child << new_child
+                end
+            end
+            result
+        end
+
         # Resolves the include tags children of an element
         #
         # This method modifies the XML tree by replacing the include tags found
@@ -205,50 +227,62 @@ module SDF
         # @param [REXML::Element] root element to find include tags
         # @!macro sdf_version
         # @return [void]
-        def self.add_include_tags(elem, sdf_version) 
+        def self.add_include_tags(elem, sdf_version, base_path)
             replacements = []
             elem.elements.each do |inc|
-                next if inc.name != 'include'
+                if inc.name == 'model' # model-within-model
+                    add_include_tags(inc, sdf_version, base_path)
+                    next
+                elsif inc.name != 'include'
+                    next
+                end
 
-                uri = nil
-                override_elements = Array.new
-                override_element_names = Set.new
+                uri, name = nil
+                overrides = Hash.new
                 inc.elements.each do |element|
                     if element.name == 'uri'
                         uri = element.text
+                    elsif element.name == 'name'
+                        name = element.text
+                    elsif INCLUDE_CHILDREN_ELEMENTS.include?(element.name)
+                        overrides[element.name] = element
                     else
-                        override_elements << element
-                        override_element_names << element.name
-                        next
+                        raise InvalidXML, "unexpected element '#{element.name}' found as child of an include"
                     end
                 end
 
-                if uri =~ /^model:\/\/(\w+)(?:\/(.*))?/
+                if !uri
+                    raise InvalidXML, "no uri element in include"
+                elsif uri =~ /^model:\/\/(\w+)(?:\/(.*))?/
                     model_name, file_name = $1, $2
                     included_sdf = model_from_name(model_name, sdf_version)
-                elsif File.directory?(uri)
-                    included_sdf = load_gazebo_model(uri, sdf_version)
+                elsif File.directory?(uri_path = File.expand_path(uri, base_path))
+                    included_sdf = load_gazebo_model(uri_path, sdf_version)
                 else
-                    raise ArgumentError, "cannot interpret include URI #{uri}"
+                    raise ArgumentError, "URI #{uri} is neither a model:// URI nor an existing directory"
                 end
 
                 included_elements = included_sdf.root.elements.to_a
-                included_elements.each do |child|
-                    child.elements.to_a.each do |grandchild|
-                        if override_element_names.include?(grandchild.name)
-                            grandchild.remove 
-                        end
-                    end
-                    override_elements.each { |override| child.elements << override }
+                if included_elements.size != 1
+                    raise InvalidXML, "expected included resource #{uri} to have exactly one model"
                 end
-                replacements << [inc, included_elements]
+
+                replacements << [inc, included_elements.first, name, overrides]
             end
                             
-            replacements.each do |inc, elements|
+            replacements.each do |inc, model, name, overrides|
                 parent = inc.parent
                 inc.remove
-                elements.each do |m|
-                    parent << m.dup 
+
+                model = deep_copy_xml(model)
+                parent << model
+                if name
+                    model.attributes['name'] = name
+                end
+                if !overrides.empty?
+                    to_delete = model.elements.find_all { |model_child| overrides.has_key?(model_child.name) }
+                    to_delete.each { |model_child| model.elements.delete(model_child) }
+                    overrides.each_value { |new_child| model << new_child }
                 end
             end
         end
@@ -273,7 +307,7 @@ module SDF
             end
 
             if !sdf.root
-                raise InvalidXML, "#{sdf_file} does not look like a XML file"
+                raise NotSDF, "#{sdf_file} can be parsed as an XML file, but it does not have a root"
             end
 
             if sdf.root.name != 'sdf' && sdf.root.name != 'gazebo'
@@ -309,15 +343,15 @@ module SDF
             sdf = load_sdf_raw(sdf_file)
             sdf_version = sdf_version_of(sdf)
             
-            resolve_relative_uris(sdf.root, sdf_version, File.dirname(sdf_file))
-            add_include_tags(sdf.root, sdf_version)
-            sdf.root.elements.each do |e|
-                if e.name == 'world' || e.name == 'model'
-                    add_include_tags(e, sdf_version)
+            sdf.root.elements.each do |element|
+                if element.name == 'world' || element.name == 'model'
+                    add_include_tags(element, sdf_version, File.dirname(sdf_file))
                 end
             end
-
+            resolve_relative_uris(sdf.root, sdf_version, File.dirname(sdf_file))
             sdf
+        rescue Exception => e
+            raise e, "while loading #{sdf_file}: #{e.message}", e.backtrace
         end
     end
 end
