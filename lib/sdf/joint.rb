@@ -2,6 +2,37 @@ module SDF
     class Joint < Element
         xml_tag_name 'joint'
 
+        def initialize(xml, parent = nil)
+            super
+
+            @sensors = Array.new
+
+            if parent
+                xml.elements.each do |child|
+                    case child.name
+                    when 'parent'
+                        @parent_link = parent.find_link_by_name(child.text)
+                        if !@parent_link
+                            raise Invalid, "joint #{self} specifies #{child.text} as its parent link, but this link does not exist"
+                        end
+                    when 'child'
+                        @child_link  = parent.find_link_by_name(child.text)
+                        if !@child_link
+                            raise Invalid, "joint #{self} specifies #{child.text} as its child link, but this link does not exist"
+                        end
+                    when 'sensor'
+                        @sensors << Sensor.new(child, self)
+                    end
+                end
+
+                if !parent_link
+                    raise Invalid, "joint element #{self} does not have the required <parent></parent> tag"
+                elsif !child_link
+                    raise Invalid, "joint element #{self} does not have the required <child></child> tag"
+                end
+            end
+        end
+
         # The joint type
         def type
             if t = xml.attributes['type']
@@ -14,11 +45,8 @@ module SDF
         # Enumerates this joint's sensors
         #
         # @yieldparam [Sensor] sensor
-        def each_sensor
-            return enum_for(__method__) if !block_given?
-            xml.elements.each('sensor') do |element|
-                yield(Sensor.new(element, self))
-            end
+        def each_sensor(&block)
+            @sensors.each(&block)
         end
 
         # The model's pose w.r.t. its parent
@@ -33,32 +61,14 @@ module SDF
         # @raise [Invalid] if the parent link is not declared or could not be
         #   found
         # @return [Link]
-        def parent_link
-            if !@parent_link
-                parent_xml = xml.elements.to_a('parent').first
-                if !parent_xml
-                    raise Invalid, "required child element 'parent' of #{self} not found"
-                end
-                @parent_link = parent.child_by_name("link[@name=\"#{parent_xml.text}\"]", Link)
-            end
-            @parent_link
-        end
+        attr_reader :parent_link
 
         # The joint's child link
         #
         # @raise [Invalid] if the parent link is not declared or could not be
         #   found
         # @return [Link]
-        def child_link
-            if !@child_link
-                child_xml = xml.elements.to_a('child').first
-                if !child_xml
-                    raise Invalid, "required child element 'child' of #{self} not found"
-                end
-                @child_link = parent.child_by_name("link[@name=\"#{child_xml.text}\"]", Link)
-            end
-            @child_link
-        end
+        attr_reader :child_link
 
         # Returns the axis of rotation for revolute joints or the axis of
         # translation for prismatic joints

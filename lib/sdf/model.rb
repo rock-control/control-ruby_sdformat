@@ -17,6 +17,25 @@ module SDF
             new(XML.model_from_name(model_name, sdf_version).elements.to_a('sdf/model').first)
         end
 
+        def initialize(xml, parent = nil)
+            super
+
+            @links   = Hash.new
+            @joints  = Array.new
+            @plugins = Array.new
+
+            xml.elements.each do |child|
+                case child.name
+                when 'link'
+                    @links[child.attributes['name']] = Link.new(child, self)
+                when 'joint'
+                    @joints << Joint.new(child, self)
+                when 'plugin'
+                    @plugins << Plugin.new(child, self)
+                end
+            end
+        end
+
         # The model's pose w.r.t. its parent
         #
         # @return [Eigen::Isometry3]
@@ -36,31 +55,30 @@ module SDF
         # Enumerates this model's links
         #
         # @yieldparam [Link] link
-        def each_link
-            return enum_for(__method__) if !block_given?
-            xml.elements.each('link') do |element|
-                yield(Link.new(element, self))
-            end
+        def each_link(&block)
+            @links.each_value(&block)
+        end
+
+        # Resolves a link by its name
+        #
+        # @return [Link]
+        # @raise ArgumentError if no links exist with that name
+        def find_link_by_name(name)
+            @links[name]
         end
 
         # Enumerates this model's joints
         #
         # @yieldparam [Joint] joint
-        def each_joint
-            return enum_for(__method__) if !block_given?
-            xml.elements.each('joint') do |element|
-                yield(Joint.new(element, self))
-            end
+        def each_joint(&block)
+            @joints.each(&block)
         end
 
         # Enumerates this model's plugins
         #
         # @yieldparam [Plugin] plugin
-        def each_plugin
-            return enum_for(__method__) if !block_given?
-            xml.elements.each('plugin') do |element|
-                yield(Plugin.new(element, self))
-            end
+        def each_plugin(&block)
+            @plugins.each(&block)
         end
 
         # Enumerates the sensors contained in this model
@@ -69,13 +87,13 @@ module SDF
         # #parent on the yield sensor objects will not return self
         #
         # @yieldparam [Sensor] sensor
-        def each_sensor
+        def each_sensor(&block)
             return enum_for(__method__) if !block_given?
             each_link do |l|
-                l.each_sensor { |s| yield(s) }
+                l.each_sensor(&block)
             end
             each_joint do |j|
-                j.each_sensor { |s| yield(s) }
+                j.each_sensor(&block)
             end
         end
     end

@@ -2,9 +2,9 @@ require 'sdf/test'
 
 module SDF
     describe Joint do
-        attr_reader :model, :joint
+        attr_reader :xml, :model, :joint
         before do
-            xml = REXML::Document.new(<<-EOD
+            @xml = REXML::Document.new(<<-EOD
                     <model>
                         <link name="parent_l" />
                         <link name="child_l" />
@@ -18,6 +18,29 @@ module SDF
 
             @model = Model.new(xml.root)
             @joint = model.child_by_name("joint", Joint)
+        end
+
+        describe "#initialize" do
+            it "raises Invalid if there is no parent element" do
+                xml = REXML::Document.new("<joint><child>test</child></joint>").root
+                assert_raises(Invalid) { Joint.new(xml, flexmock(find_link_by_name: Object.new)) }
+            end
+            it "raises Invalid if there is no child element" do
+                xml = REXML::Document.new("<joint><parent>test</parent></joint>").root
+                assert_raises(Invalid) { Joint.new(xml, flexmock(find_link_by_name: Object.new)) }
+            end
+            it "raises Invalid if the specified parent link cannot be found" do
+                xml.root.delete_element(model.xml.elements.to_a("link[@name='parent_l']").first)
+                assert_raises(Invalid) do
+                    Model.new(xml.root)
+                end
+            end
+            it "raises Invalid if the specified child link cannot be found" do
+                xml.root.delete_element(model.xml.elements.to_a("link[@name='child_l']").first)
+                assert_raises(Invalid) do
+                    Model.new(xml.root)
+                end
+            end
         end
 
         describe "#type" do
@@ -44,35 +67,15 @@ module SDF
         end
 
         describe "#parent_link" do
-            it "raises Invalid if there is no parent element" do
-                xml = REXML::Document.new("<joint />").root
-                assert_raises(Invalid) { Joint.new(xml).parent_link }
-            end
             it "returns the Link object that is the joint's parent" do
-                assert_equal model.child_by_name('link[@name="parent_l"]', Link),
+                assert_equal model.find_link_by_name('parent_l'),
                     joint.parent_link
-            end
-            it "raises Invalid if the link cannot be found" do
-                model.xml.delete_element(model.xml.elements.to_a("link[@name='parent_l']").first)
-                assert_raises(Invalid) do
-                    joint.parent_link
-                end
             end
         end
         describe "#child_link" do
-            it "raises Invalid if there is no parent element" do
-                xml = REXML::Document.new("<joint />").root
-                assert_raises(Invalid) { Joint.new(xml).child_link }
-            end
             it "returns the Link object that is the joint's child" do
-                assert_equal model.child_by_name('link[@name="child_l"]', Link),
+                assert_equal model.find_link_by_name('child_l'),
                     joint.child_link
-            end
-            it "raises Invalid if the link cannot be found" do
-                model.xml.delete_element(model.xml.elements.to_a("link[@name='child_l']").first)
-                assert_raises(Invalid) do
-                    joint.child_link
-                end
             end
         end
 

@@ -16,6 +16,8 @@ module SDF
         # @return [REXML::Element]
         attr_reader :xml
 
+        @xml_tag_name = nil
+
         def self.xml_tag_name(*args)
             if args.empty?
                 @xml_tag_name

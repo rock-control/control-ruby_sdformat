@@ -177,18 +177,23 @@ module SDF
         end
 
         def self.resolve_relative_uris(node, sdf_version, base_path)
-            node.elements.each('//uri') do |uri|
-                if uri.text =~ /^model:\/\/(\w+)(?:\/(.*))?/
-                    model_name, file_name = $1, $2
-                    sdf_path = model_path_from_name(model_name, sdf_version: sdf_version)
-                    if file_name
-                        uri.text = File.join(File.dirname(sdf_path), file_name)
-                    else
-                        uri.text = File.dirname(sdf_path)
+            nodes = [node]
+            while !nodes.empty?
+                n = nodes.shift
+                if n.name == 'uri'
+                    if n.text =~ /^model:\/\/(\w+)(?:\/(.*))?/
+                        model_name, file_name = $1, $2
+                        sdf_path = model_path_from_name(model_name, sdf_version: sdf_version)
+                        if file_name
+                            n.text = File.join(File.dirname(sdf_path), file_name)
+                        else
+                            n.text = File.dirname(sdf_path)
+                        end
+                    elsif n.text[0,1] != '/' # Relative path
+                        n.text = File.expand_path(n.text, base_path)
                     end
-                elsif uri.text[0,1] != '/' # Relative path
-                    uri.text = File.expand_path(uri.text, base_path)
                 end
+                nodes.concat(n.elements.to_a)
             end
         end
 
@@ -202,32 +207,47 @@ module SDF
         # @return [void]
         def self.add_include_tags(elem, sdf_version) 
             replacements = []
-            elem.elements.each("include") do |inc|
-                inc.elements.each("uri") do |uri|
-                    if uri.text =~ /^model:\/\/(.*)$/
-                        model_name = $1
-                        included_sdf = model_from_name(model_name, sdf_version)
-                    elsif File.directory?(uri.text)
-                        included_sdf = load_gazebo_model(uri.text, sdf_version)
+            elem.elements.each do |inc|
+                next if inc.name != 'include'
+
+                uri = nil
+                override_elements = Array.new
+                override_element_names = Set.new
+                inc.elements.each do |element|
+                    if element.name == 'uri'
+                        uri = element.text
                     else
-                        raise ArgumentError, "cannot interpret include URI #{uri}"
+                        override_elements << element
+                        override_element_names << element.name
+                        next
                     end
-                    inc.elements.each do |e|
-                        if (e.name != "uri") then
-                            included_sdf.root.elements.each do |m|    
-                                m.elements.to_a(e.name).each(&:remove)
-                                m << e.dup
-                            end
+                end
+
+                if uri =~ /^model:\/\/(\w+)(?:\/(.*))?/
+                    model_name, file_name = $1, $2
+                    included_sdf = model_from_name(model_name, sdf_version)
+                elsif File.directory?(uri)
+                    included_sdf = load_gazebo_model(uri, sdf_version)
+                else
+                    raise ArgumentError, "cannot interpret include URI #{uri}"
+                end
+
+                included_elements = included_sdf.root.elements.to_a
+                included_elements.each do |child|
+                    child.elements.to_a.each do |grandchild|
+                        if override_element_names.include?(grandchild.name)
+                            grandchild.remove 
                         end
                     end
-                    replacements << [inc, included_sdf.root.elements]
+                    override_elements.each { |override| child.elements << override }
                 end
+                replacements << [inc, included_elements]
             end
                             
-            replacements.each do |inc, models|
+            replacements.each do |inc, elements|
                 parent = inc.parent
                 inc.remove
-                models.each do |m|
+                elements.each do |m|
                     parent << m.dup 
                 end
             end
@@ -291,13 +311,12 @@ module SDF
             
             resolve_relative_uris(sdf.root, sdf_version, File.dirname(sdf_file))
             add_include_tags(sdf.root, sdf_version)
-            sdf.root.elements.each('world') do |e|
-                add_include_tags(e, sdf_version)
+            sdf.root.elements.each do |e|
+                if e.name == 'world' || e.name == 'model'
+                    add_include_tags(e, sdf_version)
+                end
             end
-            sdf.root.elements.each('model') do |e|
-                add_include_tags(e, sdf_version)
-            end
-                        
+
             sdf
         end
     end
