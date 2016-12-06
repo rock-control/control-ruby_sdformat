@@ -23,9 +23,16 @@ module SDF
             it "returns true for the 'true' string" do
                 xml = REXML::Document.new("<b>true</b>").root
                 assert_same true, Conversions.to_boolean(xml)
-
+            end
+            it "strips its input string" do
                 xml = REXML::Document.new("<b> true </b>").root
                 assert_same true, Conversions.to_boolean(xml)
+            end
+            it "does not remove intermediate spaces" do
+                xml = REXML::Document.new("<b> tr ue </b>").root
+                assert_raises(Invalid) do
+                    Conversions.to_boolean(xml)
+                end
             end
             it "returns false for the 'false' string" do
                 xml = REXML::Document.new("<b>false</b>").root

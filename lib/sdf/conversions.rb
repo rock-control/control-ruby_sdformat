@@ -52,7 +52,7 @@ module SDF
             if xml.respond_to?(:text)
                 xml = xml.text
             end
-            xml.gsub!(" ","")
+            xml = xml.strip
             if xml == 'true' || xml == '1'
                 true
             elsif xml == 'false' || xml == '0'
