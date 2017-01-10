@@ -33,7 +33,7 @@ module SDF
         def initialize(xml, parent = nil)
             xml_tag_name = self.class.xml_tag_name
             if xml_tag_name && xml_tag_name != xml.name
-                raise ArgumentError, "expected the XML element to be a '#{xml_tag_name}' tag, but got #{xml}"
+                raise ArgumentError, "expected the XML element to be a '#{xml_tag_name}' tag, but got #{xml.name.inspect} (#{xml})"
             end
             @xml, @parent = xml, parent
         end

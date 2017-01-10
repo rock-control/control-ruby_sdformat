@@ -19,5 +19,13 @@ module SDF
                 end
             end
         end
+        describe ".empty" do
+            it "creates a world with no models" do
+                world = World.empty(name: 'test')
+                assert_equal 'test', world.name
+                assert_kind_of World, world
+                assert_equal [], world.each_model.to_a
+            end
+        end
     end
 end

@@ -13,7 +13,7 @@ module SDF
             end
             world = root.add_element 'world'
             world.attributes['name'] = name
-            Root.new(xml)
+            Root.new(xml.root).each_world.first
         end
 
         xml_tag_name 'world'
