@@ -17,7 +17,7 @@ module SDF
             new(XML.model_from_name(model_name, sdf_version).elements.to_a('sdf/model').first)
         end
 
-        def initialize(xml, parent = nil)
+        def initialize(xml = REXML::Element.new('model'), parent = nil)
             super
 
             @links   = Hash.new

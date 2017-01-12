@@ -14,6 +14,14 @@ describe SDF::XML do
         SDF::XML.clear_cache
     end
 
+    it "can be created as-is" do
+        model = SDF::Model.new
+        assert model.each_link.to_a.empty?
+        assert model.each_joint.to_a.empty?
+        assert model.each_plugin.to_a.empty?
+        refute model.static?
+    end
+
     describe "load_from_model_name" do
         it "loads a gazebo model from name" do            
             model = SDF::Model.load_from_model_name("simple_model")
