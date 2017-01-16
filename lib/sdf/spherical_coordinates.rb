@@ -48,9 +48,6 @@ module SDF
             end
         end
 
-        # Width of one UTM zone in degree
-        UTM_ZONE_WIDTH_DEG = 3
-
         # Guess the UTM zone that contains these coordinates
         def default_utm_zone(lat, long)
             zone = GeoUtm::UTMZones.calc_utm_default_zone(lat, long)
