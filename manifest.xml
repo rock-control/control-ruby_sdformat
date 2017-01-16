@@ -8,4 +8,5 @@
   <depend package="hoe-yard" />
   <depend package="utilrb" />
   <depend package="base/types" />
+  <depend package="ruby-geoutm" />
 </package>

@@ -26,11 +26,15 @@ module SDF
             end
         end
 
+        def self.from_string(string)
+            new(REXML::Document.new(string).root)
+        end
+
         # Create a new element
         #
         # @param [REXML::Element] xml the XML element
         # @param [Element] parent the SDF element parent of this one
-        def initialize(xml, parent = nil)
+        def initialize(xml = REXML::Element.new(self.class.xml_tag_name), parent = nil)
             xml_tag_name = self.class.xml_tag_name
             if xml_tag_name && xml_tag_name != xml.name
                 raise ArgumentError, "expected the XML element to be a '#{xml_tag_name}' tag, but got #{xml.name.inspect} (#{xml})"
