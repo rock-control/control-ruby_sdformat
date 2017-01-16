@@ -47,6 +47,24 @@ module SDF
             assert_equal 0, coord.heading
         end
 
+        describe "#default_utm_zone" do
+            it "returns the zone and northing" do
+                coord = SphericalCoordinates.from_string(
+                    "<spherical_coordinates>
+                        <latitude_deg>48.858093</latitude_deg>
+                        <longitude_deg>2.294694</longitude_deg>
+                     </spherical_coordinates>")
+                assert_equal [31, true], coord.default_utm_zone
+
+                coord = SphericalCoordinates.from_string(
+                    "<spherical_coordinates>
+                        <latitude_deg>-22.970722</latitude_deg>
+                        <longitude_deg>-43.182365</longitude_deg>
+                     </spherical_coordinates>")
+                assert_equal [23, false], coord.default_utm_zone
+            end
+        end
+
         describe "the UTM conversion functionality" do
             it "automatically pick the UTM zone if given none - north hemishpere" do
                 coord = SphericalCoordinates.from_string(

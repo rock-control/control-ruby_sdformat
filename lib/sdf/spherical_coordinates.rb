@@ -49,9 +49,9 @@ module SDF
         end
 
         # Guess the UTM zone that contains these coordinates
-        def default_utm_zone(lat, long)
-            zone = GeoUtm::UTMZones.calc_utm_default_zone(lat, long)
-            return [GeoUtm::UTMZones.zone_number_from_zone(zone), GeoUtm::UTMZones.northern_hemishpere?(zone)]
+        def default_utm_zone
+            zone = GeoUtm::UTMZones.calc_utm_default_zone(latitude_deg, longitude_deg)
+            return [GeoUtm::UTMZones.zone_number_from_zone(zone), !!GeoUtm::UTMZones.northern_hemisphere?(zone)]
         end
 
         UTM = Struct.new :easting, :northing, :zone, :zone_north do
