@@ -29,6 +29,15 @@ module SDF
                 end
             end
         end
+
+        # Give access to the information in the world's spherical_coordinates
+        # element
+        #
+        # @return [SphericalCoordinates]
+        # @raise Invalid if there is no such element in the SDF
+        def spherical_coordinates
+            child_by_name('spherical_coordinates', SphericalCoordinates)
+        end
     end
 end
 
