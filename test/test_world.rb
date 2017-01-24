@@ -27,5 +27,18 @@ module SDF
                 assert_equal [], world.each_model.to_a
             end
         end
+
+        describe "#spherical_coordinates" do
+            it "returns the spherical coordinates object" do
+                root = SDF::World.from_string("<world><spherical_coordinates><latitude_deg>0.1</latitude_deg></spherical_coordinates></world>")
+                assert_in_delta 0.1, root.spherical_coordinates.latitude_deg, 1e-6
+            end
+            it "raises if there is no spherical coordinates element" do
+                root = SDF::World.from_string("<world />")
+                assert_raises(Invalid) do
+                    root.spherical_coordinates
+                end
+            end
+        end
     end
 end
