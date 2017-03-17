@@ -29,5 +29,25 @@ module SDF
         def pose
             Conversions.pose_to_eigen(xml.elements["pose"])
         end
+
+        # The sensor's update period in seconds, if specified
+        #
+        # @return [Float,nil]
+        # @see update_rate
+        def update_period
+            if rate = update_rate
+                1.0 / rate
+            end
+        end
+
+        # The sensor's update rate in Hz, if specified
+        #
+        # @return [Integer,nil]
+        # @see update_period
+        def update_rate
+            if update_rate = xml.elements['update_rate']
+                Integer(update_rate.text)
+            end
+        end
     end
 end
