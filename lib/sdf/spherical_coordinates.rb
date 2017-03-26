@@ -14,8 +14,14 @@ module SDF
 
         # The local latitude in degrees
         def latitude_deg
-            if model = xml.elements['latitude_deg']
-                Float(model.text)
+            if @latitude_deg
+                @latitude_deg
+            elsif model = xml.elements['latitude_deg']
+                result = Float(model.text)
+                if model.text =~ /\.(\d{5,})$/
+                    raise Invalid, "Gazebo truncates spherical_coordinates/latitude_deg and spherical_coordinates/longitude_deg to 4 decimals, cannot have #{$1.size}"
+                end
+                @latitude_deg = result
             else
                 raise Invalid, "no latitude defined"
             end
@@ -23,8 +29,14 @@ module SDF
 
         # The local longitude in degrees
         def longitude_deg
-            if model = xml.elements['longitude_deg']
-                Float(model.text)
+            if @longitude_deg
+                @longitude_deg
+            elsif model = xml.elements['longitude_deg']
+                result = Float(model.text)
+                if model.text =~ /\.(\d{5,})$/
+                    raise Invalid, "Gazebo truncates spherical_coordinates/latitude_deg and spherical_coordinates/longitude_deg to 4 decimals, cannot have #{$1.size}"
+                end
+                @longitude_deg = result
             else
                 raise Invalid, "no longitude defined"
             end
