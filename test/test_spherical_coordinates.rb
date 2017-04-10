@@ -2,6 +2,24 @@ require 'sdf/test'
 
 module SDF
     describe SphericalCoordinates do
+        it "rejects longitudes with more than 4 decimals" do
+            coord = SphericalCoordinates.from_string("<spherical_coordinates><longitude_deg>0.12345</longitude_deg></spherical_coordinates>")
+            e = assert_raises(Invalid) do
+                coord.longitude_deg
+            end
+            assert_equal "Gazebo truncates spherical_coordinates/latitude_deg and spherical_coordinates/longitude_deg to 4 decimals, cannot have 5",
+                e.message
+        end
+
+        it "rejects latitudes with more than 4 decimals" do
+            coord = SphericalCoordinates.from_string("<spherical_coordinates><latitude_deg>0.12345</latitude_deg></spherical_coordinates>")
+            e = assert_raises(Invalid) do
+                coord.latitude_deg
+            end
+            assert_equal "Gazebo truncates spherical_coordinates/latitude_deg and spherical_coordinates/longitude_deg to 4 decimals, cannot have 5",
+                e.message
+        end
+
         it "returns WGS84 as the default surface model" do
             coord = SphericalCoordinates.new
             assert_equal "WGS-84", coord.surface_model
@@ -51,15 +69,15 @@ module SDF
             it "returns the zone and northing" do
                 coord = SphericalCoordinates.from_string(
                     "<spherical_coordinates>
-                        <latitude_deg>48.858093</latitude_deg>
-                        <longitude_deg>2.294694</longitude_deg>
+                        <latitude_deg>48.8580</latitude_deg>
+                        <longitude_deg>2.2946</longitude_deg>
                      </spherical_coordinates>")
                 assert_equal [31, true], coord.default_utm_zone
 
                 coord = SphericalCoordinates.from_string(
                     "<spherical_coordinates>
-                        <latitude_deg>-22.970722</latitude_deg>
-                        <longitude_deg>-43.182365</longitude_deg>
+                        <latitude_deg>-22.9707</latitude_deg>
+                        <longitude_deg>-43.1823</longitude_deg>
                      </spherical_coordinates>")
                 assert_equal [23, false], coord.default_utm_zone
             end
@@ -69,35 +87,35 @@ module SDF
             it "automatically pick the UTM zone if given none - north hemishpere" do
                 coord = SphericalCoordinates.from_string(
                     "<spherical_coordinates>
-                        <latitude_deg>48.858093</latitude_deg>
-                        <longitude_deg>2.294694</longitude_deg>
+                        <latitude_deg>48.8580</latitude_deg>
+                        <longitude_deg>2.2946</longitude_deg>
                      </spherical_coordinates>")
                 utm = coord.utm
-                assert_in_delta 448_265.91, utm.easting, 0.01
-                assert_in_delta 5_411_920.65, utm.northing, 0.01
+                assert_in_delta 448_258.92, utm.easting, 0.01
+                assert_in_delta 5_411_910.37, utm.northing, 0.01
                 assert utm.north?
             end
             it "automatically pick the UTM zone if given none - south hemishpere" do
                 coord = SphericalCoordinates.from_string(
                     "<spherical_coordinates>
-                        <latitude_deg>-22.970722</latitude_deg>
-                        <longitude_deg>-43.182365</longitude_deg>
+                        <latitude_deg>-22.9707</latitude_deg>
+                        <longitude_deg>-43.1823</longitude_deg>
                      </spherical_coordinates>")
                 utm = coord.utm
-                assert_in_delta 686_336.05, utm.easting, 0.01
-                assert_in_delta 7_458_567.56, utm.northing, 0.01
+                assert_in_delta 686_342.74, utm.easting, 0.01
+                assert_in_delta 7_458_569.92, utm.northing, 0.01
                 refute utm.north?
             end
 
             it "allows to force the UTM zone if given one" do
                 coord = SphericalCoordinates.from_string(
                     "<spherical_coordinates>
-                        <latitude_deg>-22.966296</latitude_deg>
-                        <longitude_deg>-41.991291</longitude_deg>
+                        <latitude_deg>-22.9662</latitude_deg>
+                        <longitude_deg>-41.9912</longitude_deg>
                      </spherical_coordinates>")
                 utm = coord.utm(zone: 23)
-                assert_in_delta 807_548, utm.easting, 5000
-                assert_in_delta 7_457_048, utm.northing, 1
+                assert_in_delta 808_522, utm.easting, 1
+                assert_in_delta 7_457_059, utm.northing, 1
                 refute utm.north?
             end
 
@@ -105,15 +123,15 @@ module SDF
                 coord = SphericalCoordinates.from_string(
                     "<spherical_coordinates>
                         <latitude_deg>-0.001</latitude_deg>
-                        <longitude_deg>-51.081063</longitude_deg>
+                        <longitude_deg>-51.0810</longitude_deg>
                      </spherical_coordinates>")
                 utm = coord.utm
-                assert_in_delta 490_980, utm.easting, 1
+                assert_in_delta 490_986, utm.easting, 1
                 assert_in_delta 9_999_889, utm.northing, 1
                 refute utm.north?
 
                 utm = coord.utm(north: true)
-                assert_in_delta 490_980, utm.easting, 1
+                assert_in_delta 490_986, utm.easting, 1
                 assert_in_delta -111, utm.northing, 1
                 assert utm.north?
             end
