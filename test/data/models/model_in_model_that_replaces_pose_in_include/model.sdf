@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<sdf version="1.5">
+    <world>
+        <model name="root">
+            <include>
+                <uri>model://model_with_pose</uri>
+                <pose>1 0 3 0 0 0.1</pose>
+            </include>
+        </model>
+    </world>
+</sdf>

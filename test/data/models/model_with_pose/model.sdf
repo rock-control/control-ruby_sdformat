@@ -1,6 +1,19 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-    <model name="simple test model">
+    <model name="model_with_pose">
         <pose>1 1 1 1 1 1</pose>
+        <link name="link_without_pose" />
+        <link name="link_with_pose">
+            <pose> 1 0 1 0 0 1</pose>
+        </link>
+        <joint name="joint_without_pose" type="static">
+            <parent>link_with_pose</parent>
+            <child>link_without_pose</child>
+        </joint>
+        <joint name="joint_with_pose" type="static">
+            <parent>link_with_pose</parent>
+            <child>link_without_pose</child>
+            <pose> 2 1 2 0 0 2</pose>
+        </joint>
     </model>
 </sdf>

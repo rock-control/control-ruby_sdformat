@@ -46,6 +46,10 @@ module SDF
             super
             # Teardown code for all the tests
         end
+
+        def assert_approx_equals(expected, actual, delta = 1e-6)
+            assert expected.approx?(actual, delta), "expected #{actual} to be approximately equal to #{expected}"
+        end
     end
 end
 
