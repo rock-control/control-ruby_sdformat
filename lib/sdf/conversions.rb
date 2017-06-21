@@ -5,7 +5,7 @@ module SDF
                 if pose.respond_to?(:text)
                     pose = pose.text
                 end
-                values = pose.split(/\s+/).map { |v| Float(v) }
+                values = pose.strip.split(/\s+/).map { |v| Float(v) }
                 xyz = values[0, 3]
                 rpy = values[3, 3]
                 return xyz, rpy
