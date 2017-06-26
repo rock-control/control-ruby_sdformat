@@ -20,20 +20,22 @@ module SDF
         def initialize(xml = REXML::Element.new('model'), parent = nil)
             super
 
-            @links   = Hash.new
-            @joints  = Array.new
-            @plugins = Array.new
-
+            links, joints, plugins = Hash.new, Hash.new, Array.new
             xml.elements.each do |child|
-                case child.name
-                when 'link'
-                    @links[child.attributes['name']] = Link.new(child, self)
-                when 'joint'
-                    @joints << Joint.new(child, self)
-                when 'plugin'
-                    @plugins << Plugin.new(child, self)
+                if child.name == 'link'
+                    links[child.attributes['name']] = Link.new(child, self)
+                elsif child.name == 'joint'
+                    joints[child.attributes['name']] = child
+                elsif child.name == 'plugin'
+                    plugins << child
                 end
             end
+            @links   = links
+            @joints = Hash.new
+            joints.each do |name, child|
+                @joints[name] = Joint.new(child, self)
+            end
+            @plugins = plugins.map { |child| Plugin.new(child, self) }
         end
 
         # The model's pose w.r.t. its parent
@@ -61,8 +63,7 @@ module SDF
 
         # Resolves a link by its name
         #
-        # @return [Link]
-        # @raise ArgumentError if no links exist with that name
+        # @return [Link,nil]
         def find_link_by_name(name)
             @links[name]
         end
@@ -71,7 +72,14 @@ module SDF
         #
         # @yieldparam [Joint] joint
         def each_joint(&block)
-            @joints.each(&block)
+            @joints.each_value(&block)
+        end
+
+        # Resolves a joint by its name
+        #
+        # @return [Joint,nil]
+        def find_joint_by_name(name)
+            @joints[name]
         end
 
         # Enumerates this model's plugins
