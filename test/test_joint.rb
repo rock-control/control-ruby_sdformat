@@ -12,12 +12,20 @@ module SDF
                             <parent>parent_l</parent>
                             <child>child_l</child>
                         </joint>
+                        <joint name="attached_to_world_from_parent">
+                            <parent>world</parent>
+                            <child>child_l</child>
+                        </joint>
+                        <joint name="attached_to_world_from_child">
+                            <parent>parent_l</parent>
+                            <child>world</child>
+                        </joint>
                     </model>
                     EOD
             )
 
             @model = Model.new(xml.root)
-            @joint = model.child_by_name("joint", Joint)
+            @joint = model.find_joint_by_name("joint")
         end
 
         describe "#initialize" do
@@ -67,12 +75,20 @@ module SDF
         end
 
         describe "#parent_link" do
+            it "returns the special World link if the parent link is 'world'" do
+                joint = model.find_joint_by_name('attached_to_world_from_parent')
+                assert_equal Link::World, joint.parent_link
+            end
             it "returns the Link object that is the joint's parent" do
                 assert_equal model.find_link_by_name('parent_l'),
                     joint.parent_link
             end
         end
         describe "#child_link" do
+            it "returns the special World link if the child link is 'world'" do
+                joint = model.find_joint_by_name('attached_to_world_from_child')
+                assert_equal Link::World, joint.child_link
+            end
             it "returns the Link object that is the joint's child" do
                 assert_equal model.find_link_by_name('child_l'),
                     joint.child_link

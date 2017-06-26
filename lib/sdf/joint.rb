@@ -11,14 +11,25 @@ module SDF
                 xml.elements.each do |child|
                     case child.name
                     when 'parent'
-                        @parent_link = parent.find_link_by_name(child.text)
+                        name = child.text.strip
+                        if name == 'world'
+                            @parent_link = Link::World
+                        else
+                            @parent_link = parent.find_link_by_name(name)
+                        end
+
                         if !@parent_link
-                            raise Invalid, "joint #{self} specifies #{child.text} as its parent link, but this link does not exist"
+                            raise Invalid, "joint #{self} specifies #{name} as its parent link, but this link does not exist, existing links: #{parent.each_link.map(&:name).join(", ")}"
                         end
                     when 'child'
-                        @child_link  = parent.find_link_by_name(child.text)
+                        name = child.text.strip
+                        if name == 'world'
+                            @child_link = Link::World
+                        else
+                            @child_link  = parent.find_link_by_name(name)
+                        end
                         if !@child_link
-                            raise Invalid, "joint #{self} specifies #{child.text} as its child link, but this link does not exist"
+                            raise Invalid, "joint #{self} specifies #{name} as its child link, but this link does not exist, existing links: #{parent.each_link.map(&:name).join(", ")}"
                         end
                     when 'sensor'
                         @sensors << Sensor.new(child, self)
