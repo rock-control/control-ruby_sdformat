@@ -32,6 +32,17 @@ module SDF
             return pose
         end
 
+        # Converts an Eigen pose to a SDF pose
+        #
+        # @return [REXML::Element]
+        def self.eigen_to_pose(pose)
+            x, y, z = pose.translation.to_a
+            yaw, pitch, roll = pose.rotation.to_euler.to_a
+            pose = REXML::Element.new("pose")
+            pose.text = "#{x} #{y} #{z} #{roll} #{pitch} #{yaw}"
+            pose
+        end
+
         # Converts a SDF vector3 to an eigen vector3
         #
         # @param [String,#text,nil] pose the pose as "x y z" (as expected in SDF) or
