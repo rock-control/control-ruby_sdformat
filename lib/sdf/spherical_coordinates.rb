@@ -3,6 +3,16 @@ module SDF
     class SphericalCoordinates < Element
         xml_tag_name 'spherical_coordinates'
 
+        # Create a new element
+        #
+        # @param [REXML::Element] xml the XML element
+        # @param [Element] parent the SDF element parent of this one
+        def initialize(xml = REXML::Element.new(self.class.xml_tag_name), parent = nil)
+            super
+
+            @latitude_deg = @longitude_deg = nil
+        end
+
         # The spherical model used
         def surface_model
             if model = xml.elements['surface_model']

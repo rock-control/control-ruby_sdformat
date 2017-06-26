@@ -81,7 +81,7 @@ module SDF
             it "returns false if the two elements have different classes" do
                 xml = REXML::Document.new
                 el0 = Element.new(xml)
-                el1 = Class.new(Element).new(xml)
+                el1 = Class.new(Element) { @xml_tag_name = nil }.new(xml)
                 refute_equal el0, el1
             end
             it "returns false if the two elements have different xml" do
@@ -114,7 +114,7 @@ module SDF
                 hash = Hash.new
                 xml = REXML::Document.new
                 el0 = Element.new(xml)
-                el1 = Class.new(Element).new(xml)
+                el1 = Class.new(Element) { @xml_tag_name = nil }.new(xml)
                 hash[el0] = 10
                 assert !hash.has_key?(el1)
             end
