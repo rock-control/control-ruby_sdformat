@@ -139,6 +139,43 @@ module SDF
                 assert_equal root, model.parent.parent
             end
         end
+
+        describe "#make_root" do
+            before do
+                xml = REXML::Document.new(<<-EOXML)
+                <sdf><world name="w">
+                    <model name="m">
+                        <link name="l" />
+                    </model>
+                </world></sdf>
+                EOXML
+                @root = SDF::Root.new(xml.root)
+                @model = @root.each_world.first.each_model.first
+                @new_root = @model.make_root
+            end
+            it "returns a Root object that only includes the element" do
+                assert_equal "m", @new_root.each_model.first.name
+            end
+            it "deep-copies the XML tree" do
+                link = @new_root.each_model.first.each_link.first
+                link.xml.attributes['name'] = 'deep_copy_test'
+                assert_equal 'l', @root.each_model.first.each_link.first.name
+            end
+            it "ignores a root without a version" do
+                assert_nil @new_root.version
+            end
+            it "ignores a node without a root" do
+                xml = REXML::Document.new('<world name="w"><model name="m" /></world>')
+                world = SDF::World.new(xml.root)
+                new_root = world.each_model.first.make_root
+                assert_nil new_root.version
+            end
+            it "copies the SDF version of the root if it has one" do
+                @root.xml.attributes['version'] = '1.6'
+                new_root = @model.make_root
+                assert_equal 160, new_root.version
+            end
+        end
     end
 end
 

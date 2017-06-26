@@ -46,7 +46,9 @@ module SDF
         # @return [Integer] the advertised SDF version (as version * 100, i.e.
         #   version 1.5 is represented by 150).
         def version
-            (Float(xml.attributes['version']) * 100).round
+            if version = xml.attributes['version']
+                (Float(version) * 100).round
+            end
         end
 
         # Enumerates the toplevel models
