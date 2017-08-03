@@ -218,7 +218,7 @@ module SDF
         end
 
         INCLUDE_CHILDREN_ELEMENTS = %w{static pose}
-        MODEL_IN_MODEL_TRANSFORMED_ELEMENTS = %w{link joint frame model}
+        MODEL_IN_MODEL_TRANSFORMED_ELEMENTS = %w{link frame model}
 
         # Resolves the include tags children of an element
         #
