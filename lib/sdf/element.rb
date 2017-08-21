@@ -26,8 +26,9 @@ module SDF
             end
         end
 
+        # @deprecated use .from_xml_string instead
         def self.from_string(string)
-            new(REXML::Document.new(string).root)
+            from_xml_string(string)
         end
 
         # Create a new element
@@ -147,7 +148,20 @@ module SDF
         # Create a new SDF document where self is the first element inside the
         # <sdf></sdf> element
         def make_root
-            Root.make(xml.deep_clone, root.version)
+            # Copy the SDF version from the Root object, if there is one
+            r = root
+            if r.respond_to?(:version)
+                version = r.version
+            end
+            Root.make(xml.deep_clone, version)
+        end
+
+        def self.from_xml_string(xml_string)
+            new(REXML::Document.new(xml_string).root)
+        end
+
+        def to_xml_string
+            xml.to_s
         end
     end
 end

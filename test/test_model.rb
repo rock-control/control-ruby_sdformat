@@ -1,6 +1,6 @@
 require 'sdf/test'
 
-describe SDF::XML do
+describe SDF::Model do
     def models_dir
         File.join(File.dirname(__FILE__), 'data', 'models')
     end
@@ -39,6 +39,23 @@ describe SDF::XML do
             assert_raises(SDF::XML::UnavailableSDFVersionInModel) do
                 SDF::Model.load_from_model_name("versioned_model",0)
             end                
+        end
+    end
+
+    describe "#initialize" do
+        it "resolves joints and links so that the declaration order does not matter" do
+            model = SDF::Model.from_xml_string(<<-EOXML)
+            <model name="m">
+                <joint name="j">
+                    <parent>parent_l</parent>
+                    <child>child_l</child>
+                </joint>
+                <link name="parent_l" />
+                <link name="child_l" />
+            </model>
+            EOXML
+            assert_equal model.find_link_by_name('parent_l'), model.find_joint_by_name('j').parent_link
+            assert_equal model.find_link_by_name('child_l'), model.find_joint_by_name('j').child_link
         end
     end
 

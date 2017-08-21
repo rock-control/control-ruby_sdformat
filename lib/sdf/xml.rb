@@ -198,8 +198,6 @@ module SDF
             end
         end
 
-        INCLUDE_CHILDREN_ELEMENTS = %w{static pose}
-
         # @api private
         #
         # Deep copy of a REXML tree, needed when including models in models
@@ -218,6 +216,9 @@ module SDF
             end
             result
         end
+
+        INCLUDE_CHILDREN_ELEMENTS = %w{static pose}
+        MODEL_IN_MODEL_TRANSFORMED_ELEMENTS = %w{link frame model}
 
         # Resolves the include tags children of an element
         #
@@ -275,14 +276,52 @@ module SDF
                 inc.remove
 
                 model = deep_copy_xml(model)
-                parent << model
                 if name
                     model.attributes['name'] = name
                 end
-                if !overrides.empty?
-                    to_delete = model.elements.find_all { |model_child| overrides.has_key?(model_child.name) }
-                    to_delete.each { |model_child| model.elements.delete(model_child) }
-                    overrides.each_value { |new_child| model << new_child }
+
+                if parent.name == "model"
+                    # Namespace the model's links with the include's name,
+                    # transform them with the pose, and add them directly
+                    basename = model.attributes['name']
+                    if model_pose = overrides.delete('pose') || model.elements['pose']
+                        model_pose = Conversions.pose_to_eigen(model_pose)
+                    end
+
+                    model.children.each do |child|
+                        next if child.name == 'pose'
+
+                        if child_name = child.attributes['name']
+                            child.attributes['name'] = "#{basename}::#{child.attributes['name']}"
+                        end
+
+                        if child.name == 'joint'
+                            # Need to translate the parent and child links
+                            if parent_link = child.elements['parent']
+                                parent_link.text = "#{basename}::#{parent_link.text.strip}"
+                            end
+                            if child_link = child.elements['child']
+                                child_link.text = "#{basename}::#{child_link.text.strip}"
+                            end
+                        end
+
+                        if model_pose && MODEL_IN_MODEL_TRANSFORMED_ELEMENTS.include?(child.name)
+                            if child_pose_element = child.elements['pose']
+                                child.elements.delete(child_pose_element)
+                            end
+                            child_pose = Conversions.pose_to_eigen(child_pose_element)
+                            child_pose = model_pose * child_pose
+                            child << Conversions.eigen_to_pose(child_pose)
+                        end
+                        parent << child
+                    end
+                else
+                    if !overrides.empty?
+                        to_delete = model.elements.find_all { |model_child| overrides.has_key?(model_child.name) }
+                        to_delete.each { |model_child| model.elements.delete(model_child) }
+                        overrides.each_value { |new_child| model << new_child }
+                    end
+                    parent << model
                 end
             end
         end

@@ -17,6 +17,23 @@ module SDF
                 assert Eigen::Vector3.new(0, 0, 0).approx?(p.translation)
                 assert Eigen::Quaternion.Identity.approx?(p.rotation)
             end
+
+            it "ignores leading and trailing spaces" do
+                xml = REXML::Document.new("<pose> 1 2 3 0 -0 2 </pose>").root
+                p = Conversions.pose_to_eigen(xml)
+                assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
+                assert Eigen::Quaternion.from_angle_axis(2, Eigen::Vector3.UnitZ).approx?(p.rotation)
+            end
+        end
+
+        describe "eigen_to_pose" do
+            it "converts an Eigen transform back into XML" do
+                xml = REXML::Document.new("<pose>1 2 3 0 -0 0.2</pose>").root
+                expected = Conversions.pose_to_eigen(xml)
+                to_pose = Conversions.eigen_to_pose(expected)
+                actual = Conversions.pose_to_eigen(to_pose)
+                assert_approx_equals expected, actual
+            end
         end
 
         describe "vector3_to_eigen" do

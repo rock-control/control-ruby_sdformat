@@ -112,5 +112,16 @@ describe SDF::XML do
             end
         end
     end
+
+    describe "#version" do
+        it "returns an integer-encoded version number" do
+            root = SDF::Root.from_xml_string('<sdf version="1.5"/>')
+            assert_equal 150, root.version
+        end
+        it "returns nil if the version attribute is not set" do
+            root = SDF::Root.from_xml_string('<sdf />')
+            assert_nil root.version
+        end
+    end
 end
 

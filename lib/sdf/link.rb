@@ -71,5 +71,9 @@ module SDF
             end
             return default
         end
+
+        xml = REXML::Element.new("link")
+        xml.attributes['name'] = '__world__'
+        World = Link.new(xml).freeze
     end
 end

@@ -5,7 +5,7 @@ module SDF
                 if pose.respond_to?(:text)
                     pose = pose.text
                 end
-                values = pose.split(/\s+/).map { |v| Float(v) }
+                values = pose.strip.split(/\s+/).map { |v| Float(v) }
                 xyz = values[0, 3]
                 rpy = values[3, 3]
                 return xyz, rpy
@@ -30,6 +30,17 @@ module SDF
             pose.translate(Eigen::Vector3.new(*xyz))
             pose.rotate(q)
             return pose
+        end
+
+        # Converts an Eigen pose to a SDF pose
+        #
+        # @return [REXML::Element]
+        def self.eigen_to_pose(pose)
+            x, y, z = pose.translation.to_a
+            yaw, pitch, roll = pose.rotation.to_euler.to_a
+            pose = REXML::Element.new("pose")
+            pose.text = "#{x} #{y} #{z} #{roll} #{pitch} #{yaw}"
+            pose
         end
 
         # Converts a SDF vector3 to an eigen vector3
