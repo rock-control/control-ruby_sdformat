@@ -164,12 +164,28 @@ describe SDF::XML do
                 end
             end
 
+            it "reports the mapping from on-disk model path to in-SDF model path in metadata" do
+                _, metadata = SDF::XML.load_sdf(
+                    File.join(models_dir, 'includes_at_each_level', 'model.sdf'),
+                    metadata: true)
+
+                expected = Hash[
+                    'model://simple_model' => [
+                        'child_of_world',
+                        'model::child_of_model',
+                        'model::model_in_model::child_of_model_in_model',
+                        'root_model::child_of_root_model',
+                        'root_model::model_in_root_model::child_of_model_in_root_model']
+                ]
+                assert_equal ['model://simple_model'], metadata['includes'].keys
+                assert_equal expected['model://simple_model'].sort, metadata['includes']['model://simple_model'].sort
+            end
+
             describe "a toplevel model include" do
                 it "adds the included model as child of a toplevel world element" do
                     sdf = SDF::XML.load_sdf(File.join(models_dir, 'includes_at_each_level', 'model.sdf'))
                     assert sdf.elements["/sdf/world/model[@name='child_of_world']"]
                 end
-
                 it "injects the include/pose element in the included tree" do
                     sdf = SDF::XML.load_sdf(File.join(models_dir, "model_with_new_pose_in_include", "model.sdf"))
                     model = sdf.elements.enum_for(:each, 'sdf/world/model/pose').first

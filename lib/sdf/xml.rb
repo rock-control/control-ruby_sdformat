@@ -63,8 +63,8 @@ module SDF
         #   SDF file for the required SDF version
         #
         # @return [REXML::Element]
-        def self.load_gazebo_model(dir, sdf_version = nil)
-            return load_sdf(model_path_of(dir, sdf_version))
+        def self.load_gazebo_model(dir, sdf_version = nil, metadata: false)
+            return load_sdf(model_path_of(dir, sdf_version), metadata: metadata)
         end
         
         
@@ -121,17 +121,24 @@ module SDF
                     model_config_path = File.join(subdir, "model.config")
                     if File.file?(model_config_path)
                         begin
-                            sdf = load_gazebo_model(subdir, sdf_version)
-                            @gazebo_models[sdf_version][File.basename(subdir)] = sdf
+                            sdf_file_path = model_path_of(subdir, sdf_version)
+                            sdf, metadata = load_sdf(sdf_file_path, metadata: true)
+                            @gazebo_models[sdf_version][File.basename(subdir)] =
+                                ModelCacheEntry.new(sdf_file_path, sdf, metadata)
                         rescue UnavailableSDFVersionInModel
                         end
                     end
                 end
             end
-            @gazebo_models[sdf_version]
+
+            result = Hash.new
+            @gazebo_models[sdf_version].each do |name, cache_entry|
+                result[name] = cache_entry.xml
+            end
+            result
         end
 
-        ModelCacheEntry = Struct.new :path, :model
+        ModelCacheEntry = Struct.new :path, :xml, :metadata
 
         # Finds the path to the SDF for a gazebo model and SDF version
         #
@@ -169,11 +176,17 @@ module SDF
         # @raise [NoSuchModel] if the provided model name does not resolve to a
         #   model in {model_path}
         # @return [REXML::Element]
-        def self.model_from_name(model_name, sdf_version = nil)
+        def self.model_from_name(model_name, sdf_version = nil, metadata: false)
             path = model_path_from_name(model_name, sdf_version: sdf_version)
             cache = @gazebo_models[sdf_version][model_name]
-            cache.model ||= load_sdf(path)
-            return cache.model
+            if !cache.xml
+                cache.xml, cache.metadata = load_sdf(path, metadata: true)
+            end
+            if metadata
+                return cache.xml, cache.metadata
+            else
+                return cache.xml
+            end
         end
 
         def self.resolve_relative_uris(node, sdf_version, base_path)
@@ -229,10 +242,15 @@ module SDF
         # @!macro sdf_version
         # @return [void]
         def self.add_include_tags(elem, sdf_version, base_path)
+            includes = Hash.new
+
             replacements = []
             elem.elements.each do |inc|
                 if inc.name == 'model' # model-within-model
-                    add_include_tags(inc, sdf_version, base_path)
+                    added_includes = add_include_tags(inc, sdf_version, base_path)
+                    includes.merge! added_includes do |_, old, new|
+                        old + new
+                    end
                     next
                 elsif inc.name != 'include'
                     next
@@ -256,11 +274,25 @@ module SDF
                     raise InvalidXML, "no uri element in include"
                 elsif uri =~ /^model:\/\/(\w+)(?:\/(.*))?/
                     model_name, file_name = $1, $2
-                    included_sdf = model_from_name(model_name, sdf_version)
+                    included_sdf, included_metadata =
+                        model_from_name(model_name, sdf_version, metadata: true)
                 elsif File.directory?(uri_path = File.expand_path(uri, base_path))
-                    included_sdf = load_gazebo_model(uri_path, sdf_version)
+                    included_sdf, included_metadata =
+                        load_gazebo_model(uri_path, sdf_version, metadata: true)
                 else
                     raise ArgumentError, "URI #{uri} is neither a model:// URI nor an existing directory"
+                end
+
+                includes[uri] ||= Array.new
+                includes[uri] << name
+
+                added_includes = included_metadata['includes']
+                prefix = "#{inc.attributes['name']}::"
+                added_includes.each do |_, sdf_node_paths|
+                    sdf_node_paths.map! { |p| "#{prefix}#{p}" }
+                end
+                includes.merge!(added_includes) do |_, old, new|
+                    old + new
                 end
 
                 included_elements = included_sdf.root.elements.to_a
@@ -324,6 +356,14 @@ module SDF
                     parent << model
                 end
             end
+
+            if elem.name == 'model'
+                prefix = "#{elem.attributes['name']}::"
+                includes.each do |uri, paths|
+                    paths.map! { |p| "#{prefix}#{p}" }
+                end
+            end
+            includes
         end
 
         # Open a SDF file and returns the XML representation
@@ -378,17 +418,25 @@ module SDF
         # @raise [NotSDF] if the file is not a SDF file
         # @raise [InvalidXML] if the file is not a valid XML file
         # @return [REXML::Element]
-        def self.load_sdf(sdf_file)
+        def self.load_sdf(sdf_file, metadata: false)
             sdf = load_sdf_raw(sdf_file)
             sdf_version = sdf_version_of(sdf)
             
+            sdf_metadata = Hash['includes' => Hash.new]
             sdf.root.elements.each do |element|
                 if element.name == 'world' || element.name == 'model'
-                    add_include_tags(element, sdf_version, File.dirname(sdf_file))
+                    includes = add_include_tags(element, sdf_version, File.dirname(sdf_file))
+                    sdf_metadata['includes'].merge!(includes) do |_, old, new|
+                        old + new
+                    end
                 end
             end
             resolve_relative_uris(sdf.root, sdf_version, File.dirname(sdf_file))
-            sdf
+            if metadata
+                return sdf, sdf_metadata
+            else
+                sdf
+            end
         rescue Exception => e
             raise e, "while loading #{sdf_file}: #{e.message}", e.backtrace
         end
