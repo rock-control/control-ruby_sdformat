@@ -97,8 +97,24 @@ module SDF
             xpath
         end
 
-        def full_name
-            if (p = parent) && (p_name = p.full_name)
+        # Returns this element's name until the root
+        #
+        # The returned name stops just before the given root, i.e. with an
+        # element whose complete name is
+        #
+        #     el0::el1::el2::element
+        #
+        # then
+        #
+        #     element.full_name(root: el1) # => "el2::element"
+        #
+        # @param [nil,Element] root the root until which the name is built. Use
+        #   nil to stop at the XML root
+        # @return [String]
+        def full_name(root: nil)
+            if root && xml == root.xml
+                nil
+            elsif (p = parent) && (p_name = p.full_name(root: root))
                 p_name + '::' + name
             else
                 name

@@ -31,6 +31,16 @@ module SDF
                 elp = Element.new(el1.xml.elements.first, el1)
                 assert_equal '0::1::p', elp.full_name
             end
+
+            it "stops at the provided root if given" do
+                xml = REXML::Document.new("<root><e name=\"0\"><e name=\"1\"><e name=\"p\" /></e></e></root>")
+                # This is because all SDF elements have a name except the root
+                el0 = Element.new(xml.root.elements.first)
+                el1 = Element.new(el0.xml.elements.first, el0)
+                elp = Element.new(el1.xml.elements.first, el1)
+                assert_equal 'p', elp.full_name(root: el1)
+                assert_equal '1::p', elp.full_name(root: el0)
+            end
         end
 
         describe "#child_by_name" do
