@@ -8,6 +8,14 @@ module SDF
         # @return [REXML::Document]
         attr_reader :xml
 
+        # The metadata produced while loading this root
+        attr_reader :metadata
+
+        def initialize(xml, metadata = Hash.new)
+            super(xml)
+            @metadata = metadata
+        end
+
         # Loads a SDF file
         #
         # @param [String] sdf_file the path to the SDF file or a model:// URI
@@ -19,11 +27,12 @@ module SDF
         # @raise [XML::NotSDF] if the file is not a SDF file
         # @raise [XML::InvalidXML] if the file is not a valid XML file
         # @return [Root]
-        def self.load(sdf_file, expected_sdf_version = nil)
+        def self.load(sdf_file, expected_sdf_version = nil, flatten: true)
             if sdf_file =~ /^model:\/\/(.*)/
-                return load_from_model_name($1, expected_sdf_version)
+                return load_from_model_name($1, expected_sdf_version, flatten: flatten)
             else
-                new(XML.load_sdf(sdf_file).root)
+                xml, metadata = XML.load_sdf(sdf_file, flatten: flatten, metadata: true)
+                new(xml.root, metadata)
             end
         end
 
@@ -37,8 +46,9 @@ module SDF
         #   (as version * 100, i.e. version 1.5 is represented by 150). Leave to
         #   nil to always read the latest.
         # @return [Root]
-        def self.load_from_model_name(model_name, sdf_version = nil)
-            new(XML.model_from_name(model_name, sdf_version).root)
+        def self.load_from_model_name(model_name, sdf_version = nil, flatten: true)
+            xml, metadata = XML.model_from_name(model_name, sdf_version, flatten: flatten, metadata: true)
+            new(xml.root, metadata)
         end
 
         # The SDF version

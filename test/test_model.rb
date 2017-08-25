@@ -59,6 +59,24 @@ describe SDF::Model do
         end
     end
 
+    describe "#each_model" do
+        it "does not yield anything if the model has no models" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_model).to_a.empty?
+        end
+        it "yields the models otherwise" do
+            root = SDF::Model.new(REXML::Document.new("<model><model name=\"0\" /><model name=\"1\" /></model>").root)
+
+            models = root.each_model.to_a
+            assert_equal 2, models.size
+            models.each do |m|
+                assert_kind_of SDF::Model, m
+                assert_same root, m.parent
+                assert_equal root.xml.elements.to_a("model[@name=\"#{m.name}\"]"), [m.xml]
+            end
+        end
+    end
+
     describe "#each_link" do
         it "does not yield anything if the model has no link" do
             root = SDF::Model.new(REXML::Document.new("<model></model>").root)
@@ -94,7 +112,62 @@ describe SDF::Model do
             end
         end
     end
-    
+
+    describe "#find_joint_by_name" do
+        before do
+            @root = SDF::Model.new(REXML::Document.new(<<-EOXML).root)
+            <model name="root">
+                <link name='parent_l' />
+                <model name="child_m">
+                    <link name='parent_l' />
+                    <link name='child_l' />
+                    <joint name="child_j">
+                        <parent>parent_l</parent>
+                        <child>child_l</child>
+                    </joint>
+                </model>
+                <joint name="root_j">
+                    <parent>parent_l</parent>
+                    <child>child_m::child_l</child>
+                </joint>
+            </model>
+            EOXML
+        end
+
+        it "find a joint in a toplevel model" do joint = @root.find_joint_by_name("root_j")
+            assert_equal @root.find_link_by_name('parent_l'), joint.parent_link
+            assert_equal @root.find_link_by_name('child_m::child_l'), joint.child_link
+        end
+
+        it "finds a joint in a child model" do
+            joint = @root.find_joint_by_name("child_m::child_j")
+            assert_equal @root.find_link_by_name('child_m::parent_l'), joint.parent_link
+            assert_equal @root.find_link_by_name('child_m::child_l'), joint.child_link
+        end
+    end
+
+    describe "#find_link_by_name" do
+        before do
+            @xml = REXML::Document.new(<<-EOXML).root
+            <model name="root">
+                <link name='parent_l' />
+                <model name="child_m">
+                    <link name='parent_l' />
+                </model>
+            </model>
+            EOXML
+            @root = SDF::Model.new(@xml)
+        end
+
+        it "finds a link in a toplevel model" do
+            assert_equal @xml.elements['/model/link'], @root.find_link_by_name('parent_l').xml
+        end
+
+        it "find a link in a child model" do
+            assert_equal @xml.elements['/model/model/link'], @root.find_link_by_name('child_m::parent_l').xml
+        end
+    end
+
     describe "#static?" do
         it "returns false unless specified otherwise" do
             xml = REXML::Document.new("<model />").root

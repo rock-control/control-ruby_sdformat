@@ -20,9 +20,11 @@ module SDF
         def initialize(xml = REXML::Element.new('model'), parent = nil)
             super
 
-            links, joints, plugins = Hash.new, Hash.new, Array.new
+            models, links, joints, plugins = Hash.new, Hash.new, Hash.new, Array.new
             xml.elements.each do |child|
-                if child.name == 'link'
+                if child.name == 'model'
+                    models[child.attributes['name']] = Model.new(child, self)
+                elsif child.name == 'link'
                     links[child.attributes['name']] = Link.new(child, self)
                 elsif child.name == 'joint'
                     joints[child.attributes['name']] = child
@@ -30,10 +32,19 @@ module SDF
                     plugins << child
                 end
             end
-            @links   = links
+            @models = models
+            @links  = links
             @joints = Hash.new
-            joints.each do |name, child|
-                @joints[name] = Joint.new(child, self)
+            models.each do |child_name, child_model|
+                child_model.each_link do |link|
+                    @links["#{child_model.name}::#{link.name}"] = link
+                end
+                child_model.each_joint do |joint|
+                    @joints["#{child_model.name}::#{joint.name}"] = joint
+                end
+            end
+            joints.each do |name, joint_xml|
+                @joints[name] = Joint.new(joint_xml, self)
             end
             @plugins = plugins.map { |child| Plugin.new(child, self) }
         end
@@ -52,6 +63,13 @@ module SDF
             else
                 false
             end
+        end
+
+        # Enumerates this model's submodels
+        #
+        # @yieldparam [Link] link
+        def each_model(&block)
+            @models.each_value(&block)
         end
 
         # Enumerates this model's links

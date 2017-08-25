@@ -169,16 +169,19 @@ describe SDF::XML do
                     File.join(models_dir, 'includes_at_each_level', 'model.sdf'),
                     metadata: true)
 
-                expected = Hash[
-                    'model://simple_model' => [
-                        'child_of_world',
-                        'model::child_of_model',
-                        'model::model_in_model::child_of_model_in_model',
-                        'root_model::child_of_root_model',
-                        'root_model::model_in_root_model::child_of_model_in_root_model']
+                model_full_path = File.expand_path(File.join(
+                    'data', 'models', 'simple_model', 'model.sdf'), __dir__)
+                expected = [
+                    'w::child_of_world',
+                    'w::model::child_of_model',
+                    'w::model::model_in_model::child_of_model_in_model',
+                    'root_model::child_of_root_model',
+                    'root_model::model_in_root_model::child_of_model_in_root_model'
                 ]
-                assert_equal ['model://simple_model'], metadata['includes'].keys
-                assert_equal expected['model://simple_model'].sort, metadata['includes']['model://simple_model'].sort
+
+                assert_equal [model_full_path], metadata['includes'].keys
+                assert_equal expected.sort,
+                    metadata['includes'][model_full_path].sort
             end
 
             describe "a toplevel model include" do
@@ -228,7 +231,7 @@ describe SDF::XML do
                 end
                 it "processes it if the parent model is itself child of another model that is child of a world" do
                     sdf = sdf_includes_at_each_level
-                    assert sdf.elements["/sdf/world/model/model[@name='model_in_model']/link[@name='child_of_model_in_model::link']"]
+                    assert sdf.elements["/sdf/world/model[@name='model']/link[@name='model_in_model::child_of_model_in_model::link']"]
                 end
                 it "processes it if the parent model is toplevel" do
                     sdf = sdf_includes_at_each_level
@@ -236,7 +239,7 @@ describe SDF::XML do
                 end
                 it "processes it if the parent model is itself child of a toplevel model" do
                     sdf = sdf_includes_at_each_level
-                    assert sdf.elements["/sdf/model[@name='root_model']/model[@name='model_in_root_model']/link[@name='child_of_model_in_root_model::link']"]
+                    assert sdf.elements["/sdf/model[@name='root_model']/link[@name='model_in_root_model::child_of_model_in_root_model::link']"]
                 end
 
                 it "namespaces a joints parent link" do
@@ -335,8 +338,8 @@ describe SDF::XML do
             assert_equal('versioned model 1.3', model.attributes['name'])
         end
         it "caches the result" do
-            sdf1 = SDF::XML.model_from_name('simple_model')
-            sdf2 = SDF::XML.model_from_name('simple_model')
+            sdf1 = SDF::XML.model_from_name('simple_model', flatten: false)
+            sdf2 = SDF::XML.model_from_name('simple_model', flatten: false)
             assert_same sdf1, sdf2
         end
         it "caches the result in a version-aware way" do

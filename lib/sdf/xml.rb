@@ -63,8 +63,8 @@ module SDF
         #   SDF file for the required SDF version
         #
         # @return [REXML::Element]
-        def self.load_gazebo_model(dir, sdf_version = nil, metadata: false)
-            return load_sdf(model_path_of(dir, sdf_version), metadata: metadata)
+        def self.load_gazebo_model(dir, sdf_version = nil, metadata: false, flatten: true)
+            return load_sdf(model_path_of(dir, sdf_version), metadata: metadata, flatten:  flatten)
         end
         
         
@@ -122,7 +122,7 @@ module SDF
                     if File.file?(model_config_path)
                         begin
                             sdf_file_path = model_path_of(subdir, sdf_version)
-                            sdf, metadata = load_sdf(sdf_file_path, metadata: true)
+                            sdf, metadata = load_sdf(sdf_file_path, metadata: true, flatten: false)
                             @gazebo_models[sdf_version][File.basename(subdir)] =
                                 ModelCacheEntry.new(sdf_file_path, sdf, metadata)
                         rescue UnavailableSDFVersionInModel
@@ -176,16 +176,22 @@ module SDF
         # @raise [NoSuchModel] if the provided model name does not resolve to a
         #   model in {model_path}
         # @return [REXML::Element]
-        def self.model_from_name(model_name, sdf_version = nil, metadata: false)
+        def self.model_from_name(model_name, sdf_version = nil, metadata: false, flatten: true)
             path = model_path_from_name(model_name, sdf_version: sdf_version)
             cache = @gazebo_models[sdf_version][model_name]
             if !cache.xml
-                cache.xml, cache.metadata = load_sdf(path, metadata: true)
+                cache.xml, cache.metadata = load_sdf(path, metadata: true, flatten: false)
             end
+            xml = cache.xml
+            if flatten
+                xml = deep_copy_xml(xml)
+                flatten_model_tree(xml.root)
+            end
+
             if metadata
-                return cache.xml, cache.metadata
+                return xml, cache.metadata
             else
-                return cache.xml
+                return xml
             end
         end
 
@@ -275,16 +281,16 @@ module SDF
                 elsif uri =~ /^model:\/\/(\w+)(?:\/(.*))?/
                     model_name, file_name = $1, $2
                     included_sdf, included_metadata =
-                        model_from_name(model_name, sdf_version, metadata: true)
+                        model_from_name(model_name, sdf_version, metadata: true, flatten: false)
                 elsif File.directory?(uri_path = File.expand_path(uri, base_path))
                     included_sdf, included_metadata =
-                        load_gazebo_model(uri_path, sdf_version, metadata: true)
+                        load_gazebo_model(uri_path, sdf_version, metadata: true, flatten: false)
                 else
                     raise ArgumentError, "URI #{uri} is neither a model:// URI nor an existing directory"
                 end
 
-                includes[uri] ||= Array.new
-                includes[uri] << name
+                includes[included_metadata['path']] ||= Array.new
+                includes[included_metadata['path']] << name
 
                 added_includes = included_metadata['includes']
                 prefix = "#{inc.attributes['name']}::"
@@ -312,49 +318,12 @@ module SDF
                     model.attributes['name'] = name
                 end
 
-                if parent.name == "model"
-                    # Namespace the model's links with the include's name,
-                    # transform them with the pose, and add them directly
-                    basename = model.attributes['name']
-                    if model_pose = overrides.delete('pose') || model.elements['pose']
-                        model_pose = Conversions.pose_to_eigen(model_pose)
-                    end
-
-                    model.children.each do |child|
-                        next if child.name == 'pose'
-
-                        if child_name = child.attributes['name']
-                            child.attributes['name'] = "#{basename}::#{child.attributes['name']}"
-                        end
-
-                        if child.name == 'joint'
-                            # Need to translate the parent and child links
-                            if parent_link = child.elements['parent']
-                                parent_link.text = "#{basename}::#{parent_link.text.strip}"
-                            end
-                            if child_link = child.elements['child']
-                                child_link.text = "#{basename}::#{child_link.text.strip}"
-                            end
-                        end
-
-                        if model_pose && MODEL_IN_MODEL_TRANSFORMED_ELEMENTS.include?(child.name)
-                            if child_pose_element = child.elements['pose']
-                                child.elements.delete(child_pose_element)
-                            end
-                            child_pose = Conversions.pose_to_eigen(child_pose_element)
-                            child_pose = model_pose * child_pose
-                            child << Conversions.eigen_to_pose(child_pose)
-                        end
-                        parent << child
-                    end
-                else
-                    if !overrides.empty?
-                        to_delete = model.elements.find_all { |model_child| overrides.has_key?(model_child.name) }
-                        to_delete.each { |model_child| model.elements.delete(model_child) }
-                        overrides.each_value { |new_child| model << new_child }
-                    end
-                    parent << model
+                if !overrides.empty?
+                    to_delete = model.elements.find_all { |model_child| overrides.has_key?(model_child.name) }
+                    to_delete.each { |model_child| model.elements.delete(model_child) }
+                    overrides.each_value { |new_child| model << new_child }
                 end
+                parent << model
             end
 
             if elem.name == 'model'
@@ -418,11 +387,11 @@ module SDF
         # @raise [NotSDF] if the file is not a SDF file
         # @raise [InvalidXML] if the file is not a valid XML file
         # @return [REXML::Element]
-        def self.load_sdf(sdf_file, metadata: false)
+        def self.load_sdf(sdf_file, flatten: true, metadata: false)
             sdf = load_sdf_raw(sdf_file)
             sdf_version = sdf_version_of(sdf)
             
-            sdf_metadata = Hash['includes' => Hash.new]
+            sdf_metadata = Hash['includes' => Hash.new, 'path' => sdf_file]
             sdf.root.elements.each do |element|
                 if element.name == 'world' || element.name == 'model'
                     includes = add_include_tags(element, sdf_version, File.dirname(sdf_file))
@@ -432,6 +401,12 @@ module SDF
                 end
             end
             resolve_relative_uris(sdf.root, sdf_version, File.dirname(sdf_file))
+
+            sdf = deep_copy_xml(sdf)
+            if flatten
+                flatten_model_tree(sdf.root)
+            end
+
             if metadata
                 return sdf, sdf_metadata
             else
@@ -439,6 +414,94 @@ module SDF
             end
         rescue Exception => e
             raise e, "while loading #{sdf_file}: #{e.message}", e.backtrace
+        end
+
+        # Replace a model-in-model by a flattened structure where links are
+        # namespaced and transformed
+        def self.flatten_model_tree(xml)
+            if xml.name != 'model'
+                xml.children.each do |child|
+                    next if !child.kind_of?(REXML::Element)
+                    flatten_model_tree(child)
+                end
+                return
+            end
+
+            new, removed = [], []
+            xml.children.each do |child|
+                next if !child.kind_of?(REXML::Element)
+                next if child.name != 'model'
+
+                # Namespace the child's links with the include's name,
+                # transform them with the pose, and add them directly
+                basename = child.attributes['name']
+
+                flatten_model_tree(child)
+                new.concat(transform_submodel_nodes(child, basename))
+                removed << child
+            end
+
+            removed.each do |element|
+                xml.elements.delete(element)
+            end
+            new.each do |element|
+                xml << element
+            end
+        end
+
+
+        def self.transform_submodel_nodes(submodel, basename)
+            new = []
+            model_pose = nil
+            submodel.children.each do |child|
+                next if !child.kind_of?(REXML::Element)
+
+                if child_name = child.attributes['name']
+                    child.attributes['name'] = "#{basename}::#{child_name}"
+                end
+
+                if child.name == 'pose'
+                    model_pose = Conversions.pose_to_eigen(child)
+                    next
+                end
+
+                if child.name == 'joint'
+                    # Need to translate the parent and child links
+                    if parent_link = child.elements['parent']
+                        parent_link.text = "#{basename}::#{parent_link.text.strip}"
+                    end
+                    if child_link = child.elements['child']
+                        child_link.text = "#{basename}::#{child_link.text.strip}"
+                    end
+                end
+                new << child
+            end
+
+            if model_pose
+                new.each do |element|
+                    # A joint needs be transformed only if its pose is relative
+                    # to the parent model (axis/use_parent_model_frame is set to
+                    # true). Otherwise, it is relative to the parent link, and
+                    # should not be modified.
+                    if element.name == 'joint'
+                        axis_xml = element.elements['axis']
+                        if !axis_xml || !Axis.new(axis_xml).use_parent_model_frame?
+                            next
+                        end
+                    elsif !MODEL_IN_MODEL_TRANSFORMED_ELEMENTS.include?(element.name)
+                        next
+                    end
+
+                    child_pose_element = element.elements['pose']
+                    child_pose = Conversions.pose_to_eigen(child_pose_element)
+                    child_pose = model_pose * child_pose
+                    if child_pose_element
+                        element.elements.delete(child_pose_element)
+                    end
+                    element << Conversions.eigen_to_pose(child_pose)
+                end
+            end
+            new
         end
     end
 end
