@@ -94,7 +94,12 @@ module SDF
         end
 
         def to_s
-            xpath
+            s = "#{self.class.name.gsub(/.*::/, '')}[#{name}]"
+            if parent
+                "#{parent}/#{s}"
+            else
+                s
+            end
         end
 
         # Returns this element's name until the root
