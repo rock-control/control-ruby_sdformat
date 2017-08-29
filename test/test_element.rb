@@ -22,6 +22,17 @@ module SDF
                     root
             end
 
+            it "is changed if the element's name is modified" do
+                xml = REXML::Document.new("<a name=\"a\"><e name=\"p\" /></a>")
+                element = Element.new(xml.root)
+                child   = Element.new(xml.root.elements.first, element)
+                assert_equal 'a::p', child.full_name
+                child.name = "child"
+                assert_equal 'a::child', child.full_name
+                element.name = "parent"
+                assert_equal 'parent::child', child.full_name
+            end
+
             it "returns the name if there is no parent" do
                 xml = REXML::Document.new("<e name=\"p\" />")
                 element = Element.new(xml.root)

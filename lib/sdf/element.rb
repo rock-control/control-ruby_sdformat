@@ -61,6 +61,11 @@ module SDF
             xml.attributes['name']
         end
 
+        # Change the element name
+        def name=(name)
+            xml.attributes['name'] = name
+        end
+
         # The XPath from the root this element
         #
         # @return [String]
