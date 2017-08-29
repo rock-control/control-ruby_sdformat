@@ -252,7 +252,7 @@ module SDF
 
             replacements = []
             elem.elements.each do |inc|
-                if inc.name == 'model' # model-within-model
+                if inc.name == 'world' || inc.name == 'model' # model-within-model
                     added_includes = add_include_tags(inc, sdf_version, base_path)
                     includes.merge! added_includes do |_, old, new|
                         old + new
@@ -326,7 +326,7 @@ module SDF
                 parent << model
             end
 
-            if elem.name == 'model'
+            if elem.name != 'sdf'
                 prefix = "#{elem.attributes['name']}::"
                 includes.each do |uri, paths|
                     paths.map! { |p| "#{prefix}#{p}" }
@@ -392,13 +392,9 @@ module SDF
             sdf_version = sdf_version_of(sdf)
             
             sdf_metadata = Hash['includes' => Hash.new, 'path' => sdf_file]
-            sdf.root.elements.each do |element|
-                if element.name == 'world' || element.name == 'model'
-                    includes = add_include_tags(element, sdf_version, File.dirname(sdf_file))
-                    sdf_metadata['includes'].merge!(includes) do |_, old, new|
-                        old + new
-                    end
-                end
+            includes = add_include_tags(sdf.root, sdf_version, File.dirname(sdf_file))
+            sdf_metadata['includes'].merge!(includes) do |_, old, new|
+                old + new
             end
             resolve_relative_uris(sdf.root, sdf_version, File.dirname(sdf_file))
 

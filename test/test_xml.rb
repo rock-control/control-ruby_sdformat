@@ -184,6 +184,11 @@ describe SDF::XML do
                     metadata['includes'][model_full_path].sort
             end
 
+            it "handles a include tag directly under root" do
+                sdf = SDF::XML.load_sdf(File.join(models_dir, 'include_directly_under_root', 'model.sdf'))
+                assert sdf.elements["/sdf/model[@name='root_model']"]
+            end
+
             describe "a toplevel model include" do
                 it "adds the included model as child of a toplevel world element" do
                     sdf = SDF::XML.load_sdf(File.join(models_dir, 'includes_at_each_level', 'model.sdf'))
