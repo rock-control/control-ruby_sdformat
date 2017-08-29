@@ -280,6 +280,9 @@ module SDF
                     raise InvalidXML, "no uri element in include"
                 elsif uri =~ /^model:\/\/(\w+)(?:\/(.*))?/
                     model_name, file_name = $1, $2
+                    if file_name
+                        raise ArgumentError, "does not know how to resolve an explicit file in a model:// URI inside an include"
+                    end
                     included_sdf, included_metadata =
                         model_from_name(model_name, sdf_version, metadata: true, flatten: false)
                 elsif File.directory?(uri_path = File.expand_path(uri, base_path))

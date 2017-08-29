@@ -113,6 +113,14 @@ describe SDF::XML do
                     assert_equal "while loading #{full_path}: no uri element in include",
                         exception.message
                 end
+                it "raises if it the URI refers to a specific file" do
+                    full_path = File.join(invalid_models_dir, "include_with_specific_file_in_uri", "model.sdf")
+                    exception = assert_raises(ArgumentError) do
+                        SDF::XML.load_sdf(full_path)
+                    end
+                    assert_equal "while loading #{full_path}: does not know how to resolve an explicit file in a model:// URI inside an include",
+                        exception.message
+                end
                 it "raises if it finds an unexpected element as child of the 'include' path" do
                     full_path = File.join(invalid_models_dir, "include_with_invalid_element", "model.sdf")
                     exception = assert_raises(SDF::XML::InvalidXML) do
