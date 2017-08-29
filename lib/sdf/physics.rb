@@ -49,16 +49,6 @@ module SDF
                 1.0 / rate
             end
         end
-
-        # The world's update rate in realtime, in Hz, if specified
-        #
-        # @return [Integer,nil]
-        # @see update_period
-        def real_time_update_rate
-            if real_time_update_rate = xml.elements['real_time_update_rate']
-                Integer(real_time_update_rate.text)
-            end
-        end
     end
 end
 
