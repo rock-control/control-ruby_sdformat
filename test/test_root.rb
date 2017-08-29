@@ -59,7 +59,7 @@ describe SDF::XML do
             root.each_model do |m|
                 model_names << m.name
             end
-            assert_equal(['simple test model'], model_names.sort)
+            assert_equal ['simple test model'], model_names
         end
         it "calls load_from_model_name if given a URI" do
             version = flexmock

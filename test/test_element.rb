@@ -169,7 +169,7 @@ module SDF
             it "deep-copies the XML tree" do
                 link = @new_root.each_model.first.each_link.first
                 link.xml.attributes['name'] = 'deep_copy_test'
-                assert_equal 'l', @root.each_model.first.each_link.first.name
+                assert_equal 'l', @root.each_world.first.each_model.first.each_link.first.name
             end
             it "ignores a root without a version" do
                 assert_nil @new_root.version

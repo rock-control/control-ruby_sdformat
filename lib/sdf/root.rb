@@ -68,7 +68,7 @@ module SDF
             return enum_for(__method__, recursive: recursive) if !block_given?
 
             xml.elements.each do |element|
-                if element.name == 'world'
+                if element.name == 'world' && recursive
                     World.new(element, self).each_model(&block)
                 elsif element.name == 'model'
                     yield(Model.new(element, self))
