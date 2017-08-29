@@ -359,7 +359,8 @@ describe SDF::XML do
             exception = assert_raises(SDF::XML::NoSuchModel) do
                 SDF::XML.model_from_name('does_not_exist')
             end
-            assert_match /cannot find model does_not_exist in path .*. You probably want to update the GAZEBO_MODEL_PATH environment variable, or set SDF.model_path explicitely/, exception.message
+            expected = /cannot find model does_not_exist in path .*. You probably want to update the GAZEBO_MODEL_PATH environment variable, or set SDF.model_path explicitely/
+            assert_match expected, exception.message
         end
         it "raises if the model can be found, but not for the expected version" do
             exception = assert_raises(SDF::XML::UnavailableSDFVersionInModel) do

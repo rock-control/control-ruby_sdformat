@@ -131,8 +131,8 @@ module SDF
                 refute utm.north?
 
                 utm = coord.utm(north: true)
-                assert_in_delta 490_986, utm.easting, 1
-                assert_in_delta -111, utm.northing, 1
+                assert_in_delta(490_986, utm.easting, 1)
+                assert_in_delta(-111, utm.northing, 1)
                 assert utm.north?
             end
         end
