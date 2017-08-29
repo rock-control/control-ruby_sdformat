@@ -102,6 +102,23 @@ module SDF
             end
         end
 
+        # Find a named element within the SDF hierarchy
+        #
+        # @return [Element,nil]
+        def find_by_name(name)
+            xml.elements.each do |element|
+                element_name = element.attributes['name']
+                if name == element_name
+                    return Element.wrap(element, self)
+                elsif name.start_with?("#{element_name}::")
+                    element = Element.wrap(element, self)
+                    suffix  = name[(element_name.size + 2)..-1]
+                    return element.find_by_name(suffix)
+                end
+            end
+            nil
+        end
+
         # Returns this element's name until the root
         #
         # The returned name stops just before the given root, i.e. with an

@@ -2,6 +2,19 @@ require 'sdf/test'
 
 module SDF
     describe Element do
+        def models_dir
+            File.join(File.dirname(__FILE__), 'data', 'models')
+        end
+
+        before do
+            @model_path = SDF::XML.model_path
+            SDF::XML.model_path = [models_dir]
+        end
+        after do
+            SDF::XML.model_path = @model_path
+            SDF::XML.clear_cache
+        end
+
         describe "#full_name" do
             attr_reader :xml
             before do
@@ -184,6 +197,48 @@ module SDF
                 @root.xml.attributes['version'] = '1.6'
                 new_root = @model.make_root
                 assert_equal 160, new_root.version
+            end
+        end
+
+        describe "#find_by_name" do
+            def self.common(context)
+                context.it "returns nil if the model does not exist" do
+                    assert_nil @root.find_by_name('does_not_exist')
+                end
+
+                context.it "returns a model that is not a direct descendant of the root" do
+                    assert_equal @root.xml.elements["//model[@name='model']"],
+                        @root.find_by_name('w::model').xml
+                end
+
+                context.it "returns a model that is a direct descendant of the root" do
+                    assert_equal @root.xml.elements["//model[@name='root_model']"],
+                        @root.find_by_name('root_model').xml
+                end
+            end
+
+            describe "on flattened models" do
+                before do
+                    @root = SDF::Root.load_from_model_name('includes_at_each_level', flatten: true)
+                end
+                common(self)
+
+                it "resolves recursively within the models as well" do
+                    assert_equal @root.xml.elements["//link[@name='model_in_model::child_of_model_in_model::link']"],
+                        @root.find_by_name('w::model::model_in_model::child_of_model_in_model::link').xml
+                end
+            end
+
+            describe "on non-flattened models" do
+                before do
+                    @root = SDF::Root.load_from_model_name('includes_at_each_level', flatten: false)
+                end
+                common(self)
+
+                it "resolves recursively within the models as well" do
+                    assert_equal @root.xml.elements["//model[@name='child_of_model_in_model']/link[@name='link']"],
+                        @root.find_by_name('w::model::model_in_model::child_of_model_in_model::link').xml
+                end
             end
         end
     end

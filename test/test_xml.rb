@@ -52,7 +52,7 @@ describe SDF::XML do
     describe "gazebo_models" do
         it "loads all models available in the path" do
             models = SDF::XML.gazebo_models
-            assert_equal 22, models.size
+            assert_equal 23, models.size
 
             assert(sdf = models['simple_model'])
             model = sdf.elements.enum_for(:each, 'sdf/model').first
