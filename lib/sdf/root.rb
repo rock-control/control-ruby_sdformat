@@ -61,6 +61,30 @@ module SDF
             end
         end
 
+        # Returns Model objects from a given included model
+        #
+        # The included model can be a full path to a SDF file or a model:// URI.
+        # This function will not work - and raise - on flattened SDF trees.
+        #
+        # @param [String] model the model, either as a full path to the SDF
+        #   file, or as a model:// URI
+        # @return [Array] list of included models (as Model objects) in this
+        #   root that are coming from the requested model
+        # @raise ArgumentError if an expected node cannot be found. This will
+        #   happen on flattened SDF trees.
+        def find_all_included_models(model, sdf_version = version)
+            if uri_match = /^model:\/\//.match(model)
+                full_path = XML.model_path_from_name(uri_match.post_match, sdf_version: sdf_version)
+            end
+            (@metadata['includes'][full_path] || Array.new).map do |full_name|
+                if element = find_by_name(full_name)
+                    element
+                else
+                    raise ArgumentError, "#{full_name}, referred to as an included element for #{full_path} does not seem to exist, is this a flattened SDF tree ?"
+                end
+            end
+        end
+
         # Enumerates the toplevel models
         #
         # @yieldparam [Model] model

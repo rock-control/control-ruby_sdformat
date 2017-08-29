@@ -68,6 +68,22 @@ describe SDF::XML do
         end
     end
 
+    describe "#find_all_included_models" do
+        it "returns the Model objects of the loaded models" do
+            root = SDF::Root.load_from_model_name('includes_at_each_level', flatten: false)
+            models = root.find_all_included_models('model://simple_model').map(&:full_name)
+
+            expected = [
+                'w::child_of_world',
+                'w::model::child_of_model',
+                'w::model::model_in_model::child_of_model_in_model',
+                'root_model::child_of_root_model',
+                'root_model::model_in_root_model::child_of_model_in_root_model'
+            ]
+            assert_equal expected, models
+        end
+    end
+
     describe "each_world" do
         it "does not yield anything if no worlds are defined" do
             root = SDF::Root.new(REXML::Document.new("<sdf></sdf>").root)

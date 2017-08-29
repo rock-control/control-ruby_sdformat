@@ -1,5 +1,6 @@
 require 'geoutm'
 require 'eigen'
+require 'sdf/exceptions'
 require 'sdf/xml'
 require 'sdf/conversions'
 require 'sdf/element'
