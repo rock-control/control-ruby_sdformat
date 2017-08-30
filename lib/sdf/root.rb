@@ -75,6 +75,8 @@ module SDF
         def find_all_included_models(model, sdf_version = version)
             if uri_match = /^model:\/\//.match(model)
                 full_path = XML.model_path_from_name(uri_match.post_match, sdf_version: sdf_version)
+            else
+                full_path = model
             end
             (@metadata['includes'][full_path] || Array.new).map do |full_name|
                 if element = find_by_name(full_name)

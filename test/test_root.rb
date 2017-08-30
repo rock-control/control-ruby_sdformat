@@ -82,6 +82,21 @@ describe SDF::XML do
             ]
             assert_equal expected, models
         end
+
+        it "handles a full path" do
+            full_path = SDF::XML.model_path_from_name('simple_model')
+            root = SDF::Root.load_from_model_name('includes_at_each_level', flatten: false)
+            models = root.find_all_included_models(full_path).map(&:full_name)
+
+            expected = [
+                'w::child_of_world',
+                'w::model::child_of_model',
+                'w::model::model_in_model::child_of_model_in_model',
+                'root_model::child_of_root_model',
+                'root_model::model_in_root_model::child_of_model_in_root_model'
+            ]
+            assert_equal expected, models
+        end
     end
 
     describe "each_world" do
