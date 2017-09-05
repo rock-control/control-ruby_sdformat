@@ -237,7 +237,7 @@ module SDF
         end
 
         INCLUDE_CHILDREN_ELEMENTS = %w{static pose}
-        MODEL_IN_MODEL_TRANSFORMED_ELEMENTS = %w{link frame model}
+        MODEL_IN_MODEL_TRANSFORMED_ELEMENTS = %w{link joint frame}
 
         # Resolves the include tags children of an element
         #
@@ -478,14 +478,19 @@ module SDF
 
             if model_pose
                 new.each do |element|
-                    # A joint needs be transformed only if its pose is relative
-                    # to the parent model (axis/use_parent_model_frame is set to
-                    # true). Otherwise, it is relative to the parent link, and
-                    # should not be modified.
+                    # A joint's axis that has use_parent_model_frame needs to be
+                    # rotated according to the model's pose.
                     if element.name == 'joint'
-                        axis_xml = element.elements['axis']
-                        if !axis_xml || !Axis.new(axis_xml).use_parent_model_frame?
-                            next
+                        if axis_xml = element.elements['axis']
+                            axis = Axis.new(axis_xml)
+
+                            if axis.use_parent_model_frame?
+                                xyz = model_pose.rotation * axis.xyz
+                                if xyz_xml = axis_xml.elements['xyz']
+                                    axis_xml.elements.delete(xyz_xml)
+                                end
+                                axis_xml.elements << SDF::Conversions.eigen_to_vector3(xyz)
+                            end
                         end
                     elsif !MODEL_IN_MODEL_TRANSFORMED_ELEMENTS.include?(element.name)
                         next

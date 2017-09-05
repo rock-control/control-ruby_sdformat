@@ -377,5 +377,176 @@ describe SDF::XML do
             assert_equal "gazebo model in #{File.join(models_dir, 'versioned_model')} does not offer a SDF file matching version 100", exception.message
         end
     end
+
+    describe "flatten_model_tree" do
+        def flatten_model_tree(xml)
+            xml = SDF::XML.deep_copy_xml(xml)
+            SDF::XML.flatten_model_tree(xml)
+            xml
+        end
+
+        it "does not touch a root model" do
+            xml = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <pose>0 1 2 3 4 5</pose>
+            <link name="link" />
+            </model></sdf>
+            EOXML
+            assert_xml_identical xml, flatten_model_tree(xml)
+        end
+        it "moves elements from the submodel to the parent" do
+            expected = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <link name="link" />
+            <some_element />
+            </model></sdf>
+            EOXML
+            xml = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <model name="submodel"><some_element /></model>
+            <link name="link" />
+            </model></sdf>
+            EOXML
+            assert_xml_identical expected, flatten_model_tree(xml)
+        end
+        it "namespaces the element names" do
+            expected = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <link name="link" />
+            <some_element name="submodel::test" />
+            </model></sdf>
+            EOXML
+            xml = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <model name="submodel"><some_element name="test" /></model>
+            <link name="link" />
+            </model></sdf>
+            EOXML
+            assert_xml_identical expected, flatten_model_tree(xml)
+        end
+        it "namespaces a joints parent and child link names" do
+            expected = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <link name="submodel::root" />
+            <link name="submodel::child" />
+            <joint name="submodel::test">
+            <parent>submodel::root</parent>
+            <child>submodel::child</child>
+            </joint>
+            </model></sdf>
+            EOXML
+            xml = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <model name="submodel">
+            <link name="root" />
+            <link name="child" />
+            <joint name="test">
+            <parent>root</parent>
+            <child>child</child>
+            </joint>
+            </model>
+            </model></sdf>
+            EOXML
+            assert_xml_identical expected, flatten_model_tree(xml)
+        end
+        it "transforms a frame element using the submodel's pose" do
+            xml = load_xml(<<-EOXML)
+            <sdf>
+            <model name="root"><pose>1 2 3 0 0 0.1</pose>
+            <model name="submodel"><pose>2 3 4 0 0 0</pose>
+            <frame name="f"><pose>3 4 5 0 0 0</pose></frame>
+            </model>
+            </model>
+            </sdf>
+            EOXML
+            xml = flatten_model_tree(xml)
+            frame = SDF::Frame.new(xml.elements['model/frame'])
+            assert_approx_equals Eigen::Vector3.new(5, 7, 9), frame.pose.translation
+            assert_approx_equals Eigen::Quaternion.Identity, frame.pose.rotation
+        end
+        it "transforms a link element using the submodel's pose" do
+            xml = load_xml(<<-EOXML)
+            <sdf>
+            <model name="root"><pose>1 2 3 0 0 0.1</pose>
+            <model name="submodel"><pose>2 3 4 0 0 0</pose>
+            <link name="f"><pose>3 4 5 0 0 0</pose></link>
+            </model>
+            </model>
+            </sdf>
+            EOXML
+            xml = flatten_model_tree(xml)
+            frame = SDF::Link.new(xml.elements['model/link'])
+            assert_approx_equals Eigen::Vector3.new(5, 7, 9), frame.pose.translation
+            assert_approx_equals Eigen::Quaternion.Identity, frame.pose.rotation
+        end
+        it "transforms a joint element using the submodel's pose" do
+            xml = load_xml(<<-EOXML)
+            <sdf>
+            <model name="root"><pose>1 2 3 0 0 0.1</pose>
+            <model name="submodel"><pose>2 3 4 0 0 0</pose>
+            <joint name="f"><pose>3 4 5 0 0 0</pose></joint>
+            </model>
+            </model>
+            </sdf>
+            EOXML
+            xml = flatten_model_tree(xml)
+            joint = SDF::Joint.new(xml.elements['model/joint'])
+            assert_approx_equals Eigen::Vector3.new(5, 7, 9), joint.pose.translation
+            assert_approx_equals Eigen::Quaternion.Identity, joint.pose.rotation
+        end
+        it "does not transform a joint's axis pose using the submodel's pose if it has use_parent_model_frame unset" do
+            xml = load_xml(<<-EOXML)
+            <sdf>
+            <model name="root"><pose>1 2 3 0 0 0.1</pose>
+            <model name="submodel"><pose>2 3 4 0 0 0</pose>
+            <joint name="f">
+                <pose>3 4 5 0 0 0</pose>
+                <axis><xyz>0 1 2</xyz></axis>
+            </joint>
+            </model>
+            </model>
+            </sdf>
+            EOXML
+            xml = flatten_model_tree(xml)
+            axis = SDF::Axis.new(xml.elements['model/joint/axis'])
+            assert_approx_equals Eigen::Vector3.new(0, 1, 2), axis.xyz
+        end
+        it "rotates a joint's axis pose using the submodel's pose if it has use_parent_model_frame set" do
+            xml = load_xml(<<-EOXML)
+            <sdf>
+            <model name="root"><pose>1 2 3 0 0 0.1</pose>
+            <model name="submodel"><pose>2 3 4 0 0 0.2</pose>
+            <joint name="f">
+                <pose>3 4 5 0 0 0</pose>
+                <axis><xyz>0 1 2</xyz><use_parent_model_frame>true</use_parent_model_frame></axis>
+            </joint>
+            </model>
+            </model>
+            </sdf>
+            EOXML
+            xml = flatten_model_tree(xml)
+            axis = SDF::Axis.new(xml.elements['model/joint/axis'])
+            assert_approx_equals (Eigen::Quaternion.from_angle_axis(0.2, Eigen::Vector3.UnitZ) * Eigen::Vector3.new(0, 1, 2)), axis.xyz
+        end
+    end
+
+    def load_xml(string)
+        REXML::Document.new(string).root
+    end
+
+    def assert_xml_identical(expected, actual)
+        normalized = Class.new(REXML::Formatters::Pretty) do
+            def write_text(node, output)
+                super(node.to_s.strip, output)
+            end
+        end
+
+        normalized.new(indentation=0,ie_hack=false).
+            write(expected, expected_normalized = '')
+        normalized.new(indentation=0,ie_hack=false).
+            write(actual, actual_normalized = '')
+
+        assert_equal expected_normalized, actual_normalized
+    end
 end
 
