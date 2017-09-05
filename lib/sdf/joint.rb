@@ -105,5 +105,12 @@ module SDF
             end
             return p
         end
+
+        def each_frame
+            return enum_for(__method__) if !block_given?
+            xml.elements.to_a('frame').each do |frame_xml|
+                yield(Frame.new(frame_xml, self))
+            end
+        end
     end
 end

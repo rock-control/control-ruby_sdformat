@@ -20,7 +20,7 @@ module SDF
         def initialize(xml = REXML::Element.new('model'), parent = nil)
             super
 
-            models, links, joints, plugins = Hash.new, Hash.new, Hash.new, Array.new
+            models, links, joints, plugins, frames = Hash.new, Hash.new, Hash.new, Array.new, Hash.new
             xml.elements.each do |child|
                 if child.name == 'model'
                     models[child.attributes['name']] = Model.new(child, self)
@@ -30,10 +30,13 @@ module SDF
                     joints[child.attributes['name']] = child
                 elsif child.name == 'plugin'
                     plugins << child
+                elsif child.name == 'frame'
+                    frames[child.attributes['name']] = Frame.new(child, self)
                 end
             end
             @models = models
             @links  = links
+            @frames = frames
             @joints = Hash.new
 
             submodels = Hash.new
@@ -46,6 +49,9 @@ module SDF
                 end
                 child_model.each_joint_with_name do |joint, joint_name|
                     @joints["#{child_model.name}::#{joint_name}"] = joint
+                end
+                child_model.each_frame_with_name do |frame, frame_name|
+                    @frames["#{child_model.name}::#{frame_name}"] = frame
                 end
             end
             models.merge!(submodels)
@@ -164,6 +170,15 @@ module SDF
             each_joint do |j|
                 j.each_sensor(&block)
             end
+        end
+
+        def each_frame_with_name(&block)
+            return enum_for(__method__) if !block_given?
+            @frames.each { |frame_name, frame| yield(frame, frame_name) }
+        end
+
+        def each_frame(&block)
+            @frames.each_value(&block)
         end
     end
 end

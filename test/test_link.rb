@@ -60,5 +60,17 @@ module SDF
                 assert !Link.new(xml).kinematic?
             end
         end
+
+        describe "#each_frame" do
+            it "enumerates its frames" do
+                xml = REXML::Document.new(<<-EOXML).root
+                <link><frame name="test0" /><frame name="test1" /></link>
+                EOXML
+                link = Link.new(xml)
+                frames = link.each_frame.to_a
+                assert_equal ['test0', 'test1'], frames.map(&:name)
+                assert_equal link, frames.first.parent
+            end
+        end
     end
 end

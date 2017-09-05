@@ -128,6 +128,18 @@ module SDF
                 assert Eigen::Quaternion.Identity.approx?(t.rotation)
             end
         end
+
+        describe "#each_frame" do
+            it "enumerates its frames" do
+                xml = REXML::Document.new(<<-EOXML).root
+                <joint><frame name="test0" /><frame name="test1" /></joint>
+                EOXML
+                joint = Joint.new(xml)
+                frames = joint.each_frame.to_a
+                assert_equal ['test0', 'test1'], frames.map(&:name)
+                assert_equal joint, frames.first.parent
+            end
+        end
     end
 end
 

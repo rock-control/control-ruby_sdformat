@@ -189,5 +189,32 @@ describe SDF::Model do
             assert Eigen::Quaternion.from_angle_axis(2, Eigen::Vector3.UnitZ).approx?(p.rotation)
         end
     end
+
+    describe "frame enumeration" do
+        it "enumerates the frames" do
+            xml = REXML::Document.new(<<-EOXML).root
+            <model>
+              <frame name="test0" />
+              <frame name="test1" />
+            </model>
+            EOXML
+            model = SDF::Model.new(xml)
+            assert_equal ['test0', 'test1'], model.each_frame.map(&:name)
+        end
+
+        it "enumerates its children model's frames" do
+            xml = REXML::Document.new(<<-EOXML).root
+            <model>
+              <model name="sub">
+              <frame name="test0" />
+              <frame name="test1" />
+              </model>
+            </model>
+            EOXML
+            model = SDF::Model.new(xml)
+            assert_equal [['test0', 'sub::test0'], ['test1', 'sub::test1']],
+                model.each_frame_with_name.map { |frame, name| [frame.name, name] }
+        end
+    end
 end
 
