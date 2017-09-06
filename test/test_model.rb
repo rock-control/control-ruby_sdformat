@@ -190,6 +190,36 @@ describe SDF::Model do
         end
     end
 
+    describe "link enumeration" do
+        it "enumerates the links" do
+            xml = REXML::Document.new(<<-EOXML).root
+            <model>
+              <link name="test0" />
+              <link name="test1" />
+            </model>
+            EOXML
+            model = SDF::Model.new(xml)
+            assert_equal ['test0', 'test1'], model.each_link.map(&:name)
+        end
+
+        it "enumerates its children model's links" do
+            xml = REXML::Document.new(<<-EOXML).root
+            <model>
+              <link name="test0" />
+              <model name="sub">
+                <link name="test1" />
+                <model name="subsub">
+                  <link name="test2" />
+                </model>
+              </model>
+            </model>
+            EOXML
+            model = SDF::Model.new(xml)
+            assert_equal [['test0', 'test0'], ['test1', 'sub::test1'], ['test2', 'sub::subsub::test2']],
+                model.each_link_with_name.map { |link, name| [link.name, name] }
+        end
+    end
+
     describe "frame enumeration" do
         it "enumerates the frames" do
             xml = REXML::Document.new(<<-EOXML).root
