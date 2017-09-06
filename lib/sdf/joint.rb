@@ -19,7 +19,7 @@ module SDF
                         end
 
                         if !@parent_link
-                            raise Invalid, "joint #{self} specifies #{name} as its parent link, but this link does not exist, existing links: #{parent.each_link.map(&:name).join(", ")}"
+                            raise Invalid, "joint #{self} specifies #{name} as its parent link, but this link does not exist, existing links: #{parent.each_link_with_name.map { |_, name| name }.join(", ")}"
                         end
                     when 'child'
                         name = child.text.strip
@@ -29,7 +29,7 @@ module SDF
                             @child_link  = parent.find_link_by_name(name)
                         end
                         if !@child_link
-                            raise Invalid, "joint #{self} specifies #{name} as its child link, but this link does not exist, existing links: #{parent.each_link.map(&:name).join(", ")}"
+                            raise Invalid, "joint #{self} specifies #{name} as its child link, but this link does not exist, existing links: #{parent.each_link_with_name.map { |_, name| name }.join(", ")}"
                         end
                     when 'sensor'
                         @sensors << Sensor.new(child, self)
