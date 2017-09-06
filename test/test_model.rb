@@ -207,6 +207,26 @@ describe SDF::Model do
             subm = model.each_model.first
             assert_equal model.canonical_link, subm.canonical_link
         end
+        it "returns the parent's model canonical link for submodels, even if the submodel has a link" do
+            xml = REXML::Document.new('<model><link name="l" /><model name="sub"><link name="subl" /></model></model>').root
+            model = SDF::Model.new(xml)
+            subm = model.each_model.first
+            assert_equal model.canonical_link, subm.canonical_link
+        end
+        it "uses the submodel's canonical link if it has no link of its own" do
+            xml = REXML::Document.new('<model><model name="sub"><link name="l" /></model></model>').root
+            model = SDF::Model.new(xml)
+            subm = model.each_model.first
+            assert_equal subm.each_link.first, model.canonical_link
+        end
+        it "uses the second submodel's canonical link if it has no link of its own and the first doesn't have a link either" do
+            xml = REXML::Document.new('<model><model name="first" /><model name="sub"><link name="l" /></model></model>').root
+            model = SDF::Model.new(xml)
+            submodels = model.each_model.to_a
+            expected = submodels[1].canonical_link
+            assert_equal expected, submodels[0].canonical_link
+            assert_equal expected, model.canonical_link
+        end
         it "returns its first link if the parent model has no canonical link" do
             xml = REXML::Document.new('<model><model name="sub"><link name="l" /></model></model>').root
             model = SDF::Model.new(xml)
