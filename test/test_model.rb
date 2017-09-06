@@ -190,6 +190,31 @@ describe SDF::Model do
         end
     end
 
+    describe "the canonical link" do
+        it "is nil if the model has no link" do
+            xml = REXML::Document.new("<model />").root
+            model = SDF::Model.new(xml)
+            refute model.canonical_link
+        end
+        it "returns the first link at its level for root models" do
+            xml = REXML::Document.new('<model><link name="l" /></model>').root
+            model = SDF::Model.new(xml)
+            assert_equal 'l', model.canonical_link.name
+        end
+        it "returns the parent's model canonical link for submodels, if it has one" do
+            xml = REXML::Document.new('<model><link name="l" /><model name="sub" /></model>').root
+            model = SDF::Model.new(xml)
+            subm = model.each_model.first
+            assert_equal model.canonical_link, subm.canonical_link
+        end
+        it "returns its first link if the parent model has no canonical link" do
+            xml = REXML::Document.new('<model><model name="sub"><link name="l" /></model></model>').root
+            model = SDF::Model.new(xml)
+            subm = model.each_model.first
+            assert_equal subm.each_link.first, subm.canonical_link
+        end
+    end
+
     describe "link enumeration" do
         it "enumerates the links" do
             xml = REXML::Document.new(<<-EOXML).root

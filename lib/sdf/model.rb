@@ -23,7 +23,7 @@ module SDF
             models, links, joints, plugins, frames = Hash.new, Hash.new, Hash.new, Array.new, Hash.new
             xml.elements.each do |child|
                 if child.name == 'model'
-                    models[child.attributes['name']] = Model.new(child, self)
+                    models[child.attributes['name']] = child
                 elsif child.name == 'link'
                     links[child.attributes['name']] = Link.new(child, self)
                 elsif child.name == 'joint'
@@ -34,13 +34,22 @@ module SDF
                     frames[child.attributes['name']] = Frame.new(child, self)
                 end
             end
-            @models = models
             @links  = links
+            if parent.kind_of?(Model)
+                @canonical_link = parent.canonical_link
+            end
+            if !@canonical_link && (first_link = links.first)
+                @canonical_link = first_link.last
+            end
             @frames = frames
             @joints = Hash.new
+            @models = Hash.new
+            models.each do |model_name, xml|
+                @models[model_name] = Model.new(xml, self)
+            end
 
             submodels = Hash.new
-            models.each do |child_name, child_model|
+            @models.each do |child_name, child_model|
                 child_model.each_model_with_name do |m, m_name|
                     submodels["#{child_model.name}::#{m_name}"] = m
                 end
@@ -60,6 +69,9 @@ module SDF
             end
             @plugins = plugins.map { |child| Plugin.new(child, self) }
         end
+
+        # The link that is used to represent the pose of the model itself
+        attr_reader :canonical_link
 
         # (see Element#find_by_name)
         def find_by_name(name)
