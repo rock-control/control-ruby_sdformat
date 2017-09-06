@@ -215,6 +215,34 @@ describe SDF::Model do
         end
     end
 
+    describe "model enumeration" do
+        it "enumerates the models" do
+            xml = REXML::Document.new(<<-EOXML).root
+            <model>
+              <model name="test0" />
+              <model name="test1" />
+            </model>
+            EOXML
+            model = SDF::Model.new(xml)
+            assert_equal ['test0', 'test1'], model.each_model.map(&:name)
+        end
+
+        it "enumerates its children model's models" do
+            xml = REXML::Document.new(<<-EOXML).root
+            <model>
+              <model name="test0">
+                <model name="test1">
+                  <model name="test2" />
+                </model>
+              </model>
+            </model>
+            EOXML
+            model = SDF::Model.new(xml)
+            assert_equal [['test0', 'test0'], ['test1', 'test0::test1'], ['test2', 'test0::test1::test2']],
+                model.each_model_with_name.map { |model, name| [model.name, name] }
+        end
+    end
+
     describe "link enumeration" do
         it "enumerates the links" do
             xml = REXML::Document.new(<<-EOXML).root

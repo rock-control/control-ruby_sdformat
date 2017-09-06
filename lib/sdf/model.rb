@@ -63,7 +63,7 @@ module SDF
                     @frames["#{child_model.name}::#{frame_name}"] = frame
                 end
             end
-            models.merge!(submodels)
+            @models.merge!(submodels)
             joints.each do |name, joint_xml|
                 @joints[name] = Joint.new(joint_xml, self)
             end
