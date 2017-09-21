@@ -38,6 +38,16 @@ module SDF
         def spherical_coordinates
             child_by_name('spherical_coordinates', SphericalCoordinates)
         end
+
+        # Enumerate the world-level plugins
+        def each_plugin
+            return enum_for(__method__) if !block_given?
+            xml.elements.each do |element|
+                if element.name == 'plugin'
+                    yield(Plugin.new(element, self))
+                end
+            end
+        end
     end
 end
 
