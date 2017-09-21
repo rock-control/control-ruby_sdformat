@@ -17,7 +17,13 @@ module SDF
         class InvalidXML < ArgumentError; end
         # Exception raised when trying to resolve a model that cannot be found
         # in {model_path}
-        class NoSuchModel < ArgumentError; end
+        class NoSuchModel < ArgumentError
+            attr_reader :model_name
+
+            def initialize(model_name)
+                @model_name = model_name
+            end
+        end
 
         # The search path for models
         #
@@ -162,7 +168,7 @@ module SDF
                     return cache.path
                 end
             end
-            raise NoSuchModel, "cannot find model #{model_name} in path #{model_path.join(":")}. You probably want to update the GAZEBO_MODEL_PATH environment variable, or set SDF.model_path explicitely"
+            raise NoSuchModel.new(model_name), "cannot find model #{model_name} in path #{model_path.join(":")}. You probably want to update the GAZEBO_MODEL_PATH environment variable, or set SDF.model_path explicitely"
         end
 
         # Load a model by its name
