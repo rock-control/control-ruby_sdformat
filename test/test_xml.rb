@@ -52,7 +52,7 @@ describe SDF::XML do
     describe "gazebo_models" do
         it "loads all models available in the path" do
             models = SDF::XML.gazebo_models
-            assert_equal 22, models.size
+            assert_equal 23, models.size
 
             assert(sdf = models['simple_model'])
             model = sdf.elements.enum_for(:each, 'sdf/model').first
@@ -113,6 +113,14 @@ describe SDF::XML do
                     assert_equal "while loading #{full_path}: no uri element in include",
                         exception.message
                 end
+                it "raises if it the URI refers to a specific file" do
+                    full_path = File.join(invalid_models_dir, "include_with_specific_file_in_uri", "model.sdf")
+                    exception = assert_raises(ArgumentError) do
+                        SDF::XML.load_sdf(full_path)
+                    end
+                    assert_equal "while loading #{full_path}: does not know how to resolve an explicit file in a model:// URI inside an include",
+                        exception.message
+                end
                 it "raises if it finds an unexpected element as child of the 'include' path" do
                     full_path = File.join(invalid_models_dir, "include_with_invalid_element", "model.sdf")
                     exception = assert_raises(SDF::XML::InvalidXML) do
@@ -164,12 +172,36 @@ describe SDF::XML do
                 end
             end
 
+            it "reports the mapping from on-disk model path to in-SDF model path in metadata" do
+                _, metadata = SDF::XML.load_sdf(
+                    File.join(models_dir, 'includes_at_each_level', 'model.sdf'),
+                    metadata: true)
+
+                model_full_path = File.expand_path(File.join(
+                    'data', 'models', 'simple_model', 'model.sdf'), __dir__)
+                expected = [
+                    'w::child_of_world',
+                    'w::model::child_of_model',
+                    'w::model::model_in_model::child_of_model_in_model',
+                    'root_model::child_of_root_model',
+                    'root_model::model_in_root_model::child_of_model_in_root_model'
+                ]
+
+                assert_equal [model_full_path], metadata['includes'].keys
+                assert_equal expected.sort,
+                    metadata['includes'][model_full_path].sort
+            end
+
+            it "handles a include tag directly under root" do
+                sdf = SDF::XML.load_sdf(File.join(models_dir, 'include_directly_under_root', 'model.sdf'))
+                assert sdf.elements["/sdf/model[@name='root_model']"]
+            end
+
             describe "a toplevel model include" do
                 it "adds the included model as child of a toplevel world element" do
                     sdf = SDF::XML.load_sdf(File.join(models_dir, 'includes_at_each_level', 'model.sdf'))
                     assert sdf.elements["/sdf/world/model[@name='child_of_world']"]
                 end
-
                 it "injects the include/pose element in the included tree" do
                     sdf = SDF::XML.load_sdf(File.join(models_dir, "model_with_new_pose_in_include", "model.sdf"))
                     model = sdf.elements.enum_for(:each, 'sdf/world/model/pose').first
@@ -212,7 +244,7 @@ describe SDF::XML do
                 end
                 it "processes it if the parent model is itself child of another model that is child of a world" do
                     sdf = sdf_includes_at_each_level
-                    assert sdf.elements["/sdf/world/model/model[@name='model_in_model']/link[@name='child_of_model_in_model::link']"]
+                    assert sdf.elements["/sdf/world/model[@name='model']/link[@name='model_in_model::child_of_model_in_model::link']"]
                 end
                 it "processes it if the parent model is toplevel" do
                     sdf = sdf_includes_at_each_level
@@ -220,7 +252,7 @@ describe SDF::XML do
                 end
                 it "processes it if the parent model is itself child of a toplevel model" do
                     sdf = sdf_includes_at_each_level
-                    assert sdf.elements["/sdf/model[@name='root_model']/model[@name='model_in_root_model']/link[@name='child_of_model_in_root_model::link']"]
+                    assert sdf.elements["/sdf/model[@name='root_model']/link[@name='model_in_root_model::child_of_model_in_root_model::link']"]
                 end
 
                 it "namespaces a joints parent link" do
@@ -319,8 +351,8 @@ describe SDF::XML do
             assert_equal('versioned model 1.3', model.attributes['name'])
         end
         it "caches the result" do
-            sdf1 = SDF::XML.model_from_name('simple_model')
-            sdf2 = SDF::XML.model_from_name('simple_model')
+            sdf1 = SDF::XML.model_from_name('simple_model', flatten: false)
+            sdf2 = SDF::XML.model_from_name('simple_model', flatten: false)
             assert_same sdf1, sdf2
         end
         it "caches the result in a version-aware way" do
@@ -335,7 +367,8 @@ describe SDF::XML do
             exception = assert_raises(SDF::XML::NoSuchModel) do
                 SDF::XML.model_from_name('does_not_exist')
             end
-            assert_match /cannot find model does_not_exist in path .*. You probably want to update the GAZEBO_MODEL_PATH environment variable, or set SDF.model_path explicitely/, exception.message
+            expected = /cannot find model does_not_exist in path .*. You probably want to update the GAZEBO_MODEL_PATH environment variable, or set SDF.model_path explicitely/
+            assert_match expected, exception.message
         end
         it "raises if the model can be found, but not for the expected version" do
             exception = assert_raises(SDF::XML::UnavailableSDFVersionInModel) do
@@ -343,6 +376,177 @@ describe SDF::XML do
             end
             assert_equal "gazebo model in #{File.join(models_dir, 'versioned_model')} does not offer a SDF file matching version 100", exception.message
         end
+    end
+
+    describe "flatten_model_tree" do
+        def flatten_model_tree(xml)
+            xml = SDF::XML.deep_copy_xml(xml)
+            SDF::XML.flatten_model_tree(xml)
+            xml
+        end
+
+        it "does not touch a root model" do
+            xml = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <pose>0 1 2 3 4 5</pose>
+            <link name="link" />
+            </model></sdf>
+            EOXML
+            assert_xml_identical xml, flatten_model_tree(xml)
+        end
+        it "moves elements from the submodel to the parent" do
+            expected = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <link name="link" />
+            <some_element />
+            </model></sdf>
+            EOXML
+            xml = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <model name="submodel"><some_element /></model>
+            <link name="link" />
+            </model></sdf>
+            EOXML
+            assert_xml_identical expected, flatten_model_tree(xml)
+        end
+        it "namespaces the element names" do
+            expected = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <link name="link" />
+            <some_element name="submodel::test" />
+            </model></sdf>
+            EOXML
+            xml = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <model name="submodel"><some_element name="test" /></model>
+            <link name="link" />
+            </model></sdf>
+            EOXML
+            assert_xml_identical expected, flatten_model_tree(xml)
+        end
+        it "namespaces a joints parent and child link names" do
+            expected = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <link name="submodel::root" />
+            <link name="submodel::child" />
+            <joint name="submodel::test">
+            <parent>submodel::root</parent>
+            <child>submodel::child</child>
+            </joint>
+            </model></sdf>
+            EOXML
+            xml = load_xml(<<-EOXML)
+            <sdf><model name="root">
+            <model name="submodel">
+            <link name="root" />
+            <link name="child" />
+            <joint name="test">
+            <parent>root</parent>
+            <child>child</child>
+            </joint>
+            </model>
+            </model></sdf>
+            EOXML
+            assert_xml_identical expected, flatten_model_tree(xml)
+        end
+        it "transforms a frame element using the submodel's pose" do
+            xml = load_xml(<<-EOXML)
+            <sdf>
+            <model name="root"><pose>1 2 3 0 0 0.1</pose>
+            <model name="submodel"><pose>2 3 4 0 0 0</pose>
+            <frame name="f"><pose>3 4 5 0 0 0</pose></frame>
+            </model>
+            </model>
+            </sdf>
+            EOXML
+            xml = flatten_model_tree(xml)
+            frame = SDF::Frame.new(xml.elements['model/frame'])
+            assert_approx_equals Eigen::Vector3.new(5, 7, 9), frame.pose.translation
+            assert_approx_equals Eigen::Quaternion.Identity, frame.pose.rotation
+        end
+        it "transforms a link element using the submodel's pose" do
+            xml = load_xml(<<-EOXML)
+            <sdf>
+            <model name="root"><pose>1 2 3 0 0 0.1</pose>
+            <model name="submodel"><pose>2 3 4 0 0 0</pose>
+            <link name="f"><pose>3 4 5 0 0 0</pose></link>
+            </model>
+            </model>
+            </sdf>
+            EOXML
+            xml = flatten_model_tree(xml)
+            frame = SDF::Link.new(xml.elements['model/link'])
+            assert_approx_equals Eigen::Vector3.new(5, 7, 9), frame.pose.translation
+            assert_approx_equals Eigen::Quaternion.Identity, frame.pose.rotation
+        end
+        it "transforms a joint element using the submodel's pose" do
+            xml = load_xml(<<-EOXML)
+            <sdf>
+            <model name="root"><pose>1 2 3 0 0 0.1</pose>
+            <model name="submodel"><pose>2 3 4 0 0 0</pose>
+            <joint name="f"><pose>3 4 5 0 0 0</pose></joint>
+            </model>
+            </model>
+            </sdf>
+            EOXML
+            xml = flatten_model_tree(xml)
+            joint = SDF::Joint.new(xml.elements['model/joint'])
+            assert_approx_equals Eigen::Vector3.new(5, 7, 9), joint.pose.translation
+            assert_approx_equals Eigen::Quaternion.Identity, joint.pose.rotation
+        end
+        it "does not transform a joint's axis pose using the submodel's pose if it has use_parent_model_frame unset" do
+            xml = load_xml(<<-EOXML)
+            <sdf>
+            <model name="root"><pose>1 2 3 0 0 0.1</pose>
+            <model name="submodel"><pose>2 3 4 0 0 0</pose>
+            <joint name="f">
+                <pose>3 4 5 0 0 0</pose>
+                <axis><xyz>0 1 2</xyz></axis>
+            </joint>
+            </model>
+            </model>
+            </sdf>
+            EOXML
+            xml = flatten_model_tree(xml)
+            axis = SDF::Axis.new(xml.elements['model/joint/axis'])
+            assert_approx_equals Eigen::Vector3.new(0, 1, 2), axis.xyz
+        end
+        it "rotates a joint's axis pose using the submodel's pose if it has use_parent_model_frame set" do
+            xml = load_xml(<<-EOXML)
+            <sdf>
+            <model name="root"><pose>1 2 3 0 0 0.1</pose>
+            <model name="submodel"><pose>2 3 4 0 0 0.2</pose>
+            <joint name="f">
+                <pose>3 4 5 0 0 0</pose>
+                <axis><xyz>0 1 2</xyz><use_parent_model_frame>true</use_parent_model_frame></axis>
+            </joint>
+            </model>
+            </model>
+            </sdf>
+            EOXML
+            xml = flatten_model_tree(xml)
+            axis = SDF::Axis.new(xml.elements['model/joint/axis'])
+            assert_approx_equals (Eigen::Quaternion.from_angle_axis(0.2, Eigen::Vector3.UnitZ) * Eigen::Vector3.new(0, 1, 2)), axis.xyz
+        end
+    end
+
+    def load_xml(string)
+        REXML::Document.new(string).root
+    end
+
+    def assert_xml_identical(expected, actual)
+        normalized = Class.new(REXML::Formatters::Pretty) do
+            def write_text(node, output)
+                super(node.to_s.strip, output)
+            end
+        end
+
+        normalized.new(indentation=0,ie_hack=false).
+            write(expected, expected_normalized = '')
+        normalized.new(indentation=0,ie_hack=false).
+            write(actual, actual_normalized = '')
+
+        assert_equal expected_normalized, actual_normalized
     end
 end
 

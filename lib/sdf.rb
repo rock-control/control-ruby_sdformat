@@ -1,5 +1,6 @@
 require 'geoutm'
 require 'eigen'
+require 'sdf/exceptions'
 require 'sdf/xml'
 require 'sdf/conversions'
 require 'sdf/element'
@@ -14,6 +15,7 @@ require 'sdf/axis'
 require 'sdf/axis_limit'
 require 'sdf/plugin'
 require 'sdf/sensor'
+require 'sdf/frame'
 
 # The toplevel namespace for sdf
 #

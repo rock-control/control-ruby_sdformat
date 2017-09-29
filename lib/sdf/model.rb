@@ -20,22 +20,64 @@ module SDF
         def initialize(xml = REXML::Element.new('model'), parent = nil)
             super
 
-            links, joints, plugins = Hash.new, Hash.new, Array.new
+            models, links, joints, plugins, frames = Hash.new, Hash.new, Hash.new, Array.new, Hash.new
             xml.elements.each do |child|
-                if child.name == 'link'
-                    links[child.attributes['name']] = Link.new(child, self)
+                if child.name == 'model'
+                    models[child.attributes['name']] = child
+                elsif child.name == 'link'
+                    link = Link.new(child, self)
+                    @canonical_link ||= link
+                    links[child.attributes['name']] = link
                 elsif child.name == 'joint'
                     joints[child.attributes['name']] = child
                 elsif child.name == 'plugin'
                     plugins << child
+                elsif child.name == 'frame'
+                    frames[child.attributes['name']] = Frame.new(child, self)
                 end
             end
-            @links   = links
+            @links  = links
+            @frames = frames
             @joints = Hash.new
-            joints.each do |name, child|
-                @joints[name] = Joint.new(child, self)
+            @models = Hash.new
+            models.each do |model_name, xml|
+                model = Model.new(xml, self)
+                @models[model_name] = model
+                @canonical_link ||= model.canonical_link
+            end
+
+            submodels = Hash.new
+            @models.each do |child_name, child_model|
+                child_model.each_model_with_name do |m, m_name|
+                    submodels["#{child_model.name}::#{m_name}"] = m
+                end
+                child_model.each_link_with_name do |link, link_name|
+                    @links["#{child_model.name}::#{link_name}"] = link
+                end
+                child_model.each_joint_with_name do |joint, joint_name|
+                    @joints["#{child_model.name}::#{joint_name}"] = joint
+                end
+                child_model.each_frame_with_name do |frame, frame_name|
+                    @frames["#{child_model.name}::#{frame_name}"] = frame
+                end
+            end
+
+            @models.merge!(submodels)
+            @models.each_value do |m|
+                m.canonical_link = @canonical_link
+            end
+            joints.each do |name, joint_xml|
+                @joints[name] = Joint.new(joint_xml, self)
             end
             @plugins = plugins.map { |child| Plugin.new(child, self) }
+        end
+
+        # The link that is used to represent the pose of the model itself
+        attr_accessor :canonical_link
+
+        # (see Element#find_by_name)
+        def find_by_name(name)
+            @models[name] || @links[name] || @joints[name]
         end
 
         # The model's pose w.r.t. its parent
@@ -54,11 +96,40 @@ module SDF
             end
         end
 
+        # Enumerates this model's submodels
+        #
+        # The enumeration is recursive, i.e. it will yield models-of-submodels
+        #
+        # @yieldparam [Model] model
+        def each_model
+            return enum_for(__method__) if !block_given?
+            @models.each_value { |m| yield(m) }
+        end
+
+        # Enumerates this model's submodels along with their relative name
+        #
+        # @yieldparam [Model] model
+        # @yieldparam [String] name the name, relative to self
+        def each_model_with_name
+            return enum_for(__method__) if !block_given?
+            @models.each { |name, m| yield(m, name) }
+        end
+
         # Enumerates this model's links
         #
         # @yieldparam [Link] link
-        def each_link(&block)
-            @links.each_value(&block)
+        def each_link
+            return enum_for(__method__) if !block_given?
+            @links.each_value { |l| yield(l) }
+        end
+
+        # Enumerates this model's links with their relative names
+        #
+        # @yieldparam [Link] link
+        # @yieldparam [String] name the name, relative to self
+        def each_link_with_name
+            return enum_for(__method__) if !block_given?
+            @links.each { |name, link| yield(link, name) }
         end
 
         # Resolves a link by its name
@@ -72,7 +143,17 @@ module SDF
         #
         # @yieldparam [Joint] joint
         def each_joint(&block)
-            @joints.each_value(&block)
+            return enum_for(__method__) if !block_given?
+            @joints.each_value { |j| yield(j) }
+        end
+
+        # Enumerates this model's joints along with their relative names
+        #
+        # @yieldparam [Joint] joint
+        # @yieldparam [String] name the name, relative to self
+        def each_joint_with_name
+            return enum_for(__method__) if !block_given?
+            @joints.each { |name, j| yield(j, name) }
         end
 
         # Resolves a joint by its name
@@ -103,6 +184,15 @@ module SDF
             each_joint do |j|
                 j.each_sensor(&block)
             end
+        end
+
+        def each_frame_with_name(&block)
+            return enum_for(__method__) if !block_given?
+            @frames.each { |frame_name, frame| yield(frame, frame_name) }
+        end
+
+        def each_frame(&block)
+            @frames.each_value(&block)
         end
     end
 end

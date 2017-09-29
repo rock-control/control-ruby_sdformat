@@ -46,7 +46,7 @@ module SDF
         # @see update_period
         def update_rate
             if update_rate = xml.elements['update_rate']
-                Integer(update_rate.text)
+                Float(update_rate.text)
             end
         end
     end

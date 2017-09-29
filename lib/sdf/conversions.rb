@@ -60,6 +60,13 @@ module SDF
             end
         end
 
+        # Converts an Eigen vector into a SDF vector3
+        def self.eigen_to_vector3(v, element_name = "xyz")
+            el = REXML::Element.new(element_name)
+            el.text = "#{v.x} #{v.y} #{v.z}"
+            el
+        end
+
         # Converts a SDF boolean into a Ruby true/false value
         #
         # @param [String,#text] boolean the SDF boolean ('true','false','0',1')

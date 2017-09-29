@@ -59,6 +59,24 @@ describe SDF::Model do
         end
     end
 
+    describe "#each_model" do
+        it "does not yield anything if the model has no models" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_model).to_a.empty?
+        end
+        it "yields the models otherwise" do
+            root = SDF::Model.new(REXML::Document.new("<model><model name=\"0\" /><model name=\"1\" /></model>").root)
+
+            models = root.each_model.to_a
+            assert_equal 2, models.size
+            models.each do |m|
+                assert_kind_of SDF::Model, m
+                assert_same root, m.parent
+                assert_equal root.xml.elements.to_a("model[@name=\"#{m.name}\"]"), [m.xml]
+            end
+        end
+    end
+
     describe "#each_link" do
         it "does not yield anything if the model has no link" do
             root = SDF::Model.new(REXML::Document.new("<model></model>").root)
@@ -94,7 +112,62 @@ describe SDF::Model do
             end
         end
     end
-    
+
+    describe "#find_joint_by_name" do
+        before do
+            @root = SDF::Model.new(REXML::Document.new(<<-EOXML).root)
+            <model name="root">
+                <link name='parent_l' />
+                <model name="child_m">
+                    <link name='parent_l' />
+                    <link name='child_l' />
+                    <joint name="child_j">
+                        <parent>parent_l</parent>
+                        <child>child_l</child>
+                    </joint>
+                </model>
+                <joint name="root_j">
+                    <parent>parent_l</parent>
+                    <child>child_m::child_l</child>
+                </joint>
+            </model>
+            EOXML
+        end
+
+        it "find a joint in a toplevel model" do joint = @root.find_joint_by_name("root_j")
+            assert_equal @root.find_link_by_name('parent_l'), joint.parent_link
+            assert_equal @root.find_link_by_name('child_m::child_l'), joint.child_link
+        end
+
+        it "finds a joint in a child model" do
+            joint = @root.find_joint_by_name("child_m::child_j")
+            assert_equal @root.find_link_by_name('child_m::parent_l'), joint.parent_link
+            assert_equal @root.find_link_by_name('child_m::child_l'), joint.child_link
+        end
+    end
+
+    describe "#find_link_by_name" do
+        before do
+            @xml = REXML::Document.new(<<-EOXML).root
+            <model name="root">
+                <link name='parent_l' />
+                <model name="child_m">
+                    <link name='parent_l' />
+                </model>
+            </model>
+            EOXML
+            @root = SDF::Model.new(@xml)
+        end
+
+        it "finds a link in a toplevel model" do
+            assert_equal @xml.elements['/model/link'], @root.find_link_by_name('parent_l').xml
+        end
+
+        it "find a link in a child model" do
+            assert_equal @xml.elements['/model/model/link'], @root.find_link_by_name('child_m::parent_l').xml
+        end
+    end
+
     describe "#static?" do
         it "returns false unless specified otherwise" do
             xml = REXML::Document.new("<model />").root
@@ -114,6 +187,136 @@ describe SDF::Model do
             p = model.pose
             assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
             assert Eigen::Quaternion.from_angle_axis(2, Eigen::Vector3.UnitZ).approx?(p.rotation)
+        end
+    end
+
+    describe "the canonical link" do
+        it "is nil if the model has no link" do
+            xml = REXML::Document.new("<model />").root
+            model = SDF::Model.new(xml)
+            refute model.canonical_link
+        end
+        it "returns the first link at its level for root models" do
+            xml = REXML::Document.new('<model><link name="l" /></model>').root
+            model = SDF::Model.new(xml)
+            assert_equal 'l', model.canonical_link.name
+        end
+        it "returns the parent's model canonical link for submodels, if it has one" do
+            xml = REXML::Document.new('<model><link name="l" /><model name="sub" /></model>').root
+            model = SDF::Model.new(xml)
+            subm = model.each_model.first
+            assert_equal model.canonical_link, subm.canonical_link
+        end
+        it "returns the parent's model canonical link for submodels, even if the submodel has a link" do
+            xml = REXML::Document.new('<model><link name="l" /><model name="sub"><link name="subl" /></model></model>').root
+            model = SDF::Model.new(xml)
+            subm = model.each_model.first
+            assert_equal model.canonical_link, subm.canonical_link
+        end
+        it "uses the submodel's canonical link if it has no link of its own" do
+            xml = REXML::Document.new('<model><model name="sub"><link name="l" /></model></model>').root
+            model = SDF::Model.new(xml)
+            subm = model.each_model.first
+            assert_equal subm.each_link.first, model.canonical_link
+        end
+        it "uses the second submodel's canonical link if it has no link of its own and the first doesn't have a link either" do
+            xml = REXML::Document.new('<model><model name="first" /><model name="sub"><link name="l" /></model></model>').root
+            model = SDF::Model.new(xml)
+            submodels = model.each_model.to_a
+            expected = submodels[1].canonical_link
+            assert_equal expected, submodels[0].canonical_link
+            assert_equal expected, model.canonical_link
+        end
+        it "returns its first link if the parent model has no canonical link" do
+            xml = REXML::Document.new('<model><model name="sub"><link name="l" /></model></model>').root
+            model = SDF::Model.new(xml)
+            subm = model.each_model.first
+            assert_equal subm.each_link.first, subm.canonical_link
+        end
+    end
+
+    describe "model enumeration" do
+        it "enumerates the models" do
+            xml = REXML::Document.new(<<-EOXML).root
+            <model>
+              <model name="test0" />
+              <model name="test1" />
+            </model>
+            EOXML
+            model = SDF::Model.new(xml)
+            assert_equal ['test0', 'test1'], model.each_model.map(&:name)
+        end
+
+        it "enumerates its children model's models" do
+            xml = REXML::Document.new(<<-EOXML).root
+            <model>
+              <model name="test0">
+                <model name="test1">
+                  <model name="test2" />
+                </model>
+              </model>
+            </model>
+            EOXML
+            model = SDF::Model.new(xml)
+            assert_equal [['test0', 'test0'], ['test1', 'test0::test1'], ['test2', 'test0::test1::test2']],
+                model.each_model_with_name.map { |model, name| [model.name, name] }
+        end
+    end
+
+    describe "link enumeration" do
+        it "enumerates the links" do
+            xml = REXML::Document.new(<<-EOXML).root
+            <model>
+              <link name="test0" />
+              <link name="test1" />
+            </model>
+            EOXML
+            model = SDF::Model.new(xml)
+            assert_equal ['test0', 'test1'], model.each_link.map(&:name)
+        end
+
+        it "enumerates its children model's links" do
+            xml = REXML::Document.new(<<-EOXML).root
+            <model>
+              <link name="test0" />
+              <model name="sub">
+                <link name="test1" />
+                <model name="subsub">
+                  <link name="test2" />
+                </model>
+              </model>
+            </model>
+            EOXML
+            model = SDF::Model.new(xml)
+            assert_equal [['test0', 'test0'], ['test1', 'sub::test1'], ['test2', 'sub::subsub::test2']],
+                model.each_link_with_name.map { |link, name| [link.name, name] }
+        end
+    end
+
+    describe "frame enumeration" do
+        it "enumerates the frames" do
+            xml = REXML::Document.new(<<-EOXML).root
+            <model>
+              <frame name="test0" />
+              <frame name="test1" />
+            </model>
+            EOXML
+            model = SDF::Model.new(xml)
+            assert_equal ['test0', 'test1'], model.each_frame.map(&:name)
+        end
+
+        it "enumerates its children model's frames" do
+            xml = REXML::Document.new(<<-EOXML).root
+            <model>
+              <model name="sub">
+              <frame name="test0" />
+              <frame name="test1" />
+              </model>
+            </model>
+            EOXML
+            model = SDF::Model.new(xml)
+            assert_equal [['test0', 'sub::test0'], ['test1', 'sub::test1']],
+                model.each_frame_with_name.map { |frame, name| [frame.name, name] }
         end
     end
 end

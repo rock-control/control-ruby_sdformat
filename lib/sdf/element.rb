@@ -61,6 +61,11 @@ module SDF
             xml.attributes['name']
         end
 
+        # Change the element name
+        def name=(name)
+            xml.attributes['name'] = name
+        end
+
         # The XPath from the root this element
         #
         # @return [String]
@@ -94,11 +99,49 @@ module SDF
         end
 
         def to_s
-            xpath
+            s = "#{self.class.name.gsub(/.*::/, '')}[#{name}]"
+            if parent
+                "#{parent}/#{s}"
+            else
+                s
+            end
         end
 
-        def full_name
-            if (p = parent) && (p_name = p.full_name)
+        # Find a named element within the SDF hierarchy
+        #
+        # @return [Element,nil]
+        def find_by_name(name)
+            xml.elements.each do |element|
+                element_name = element.attributes['name']
+                if name == element_name
+                    return Element.wrap(element, self)
+                elsif name.start_with?("#{element_name}::")
+                    element = Element.wrap(element, self)
+                    suffix  = name[(element_name.size + 2)..-1]
+                    return element.find_by_name(suffix)
+                end
+            end
+            nil
+        end
+
+        # Returns this element's name until the root
+        #
+        # The returned name stops just before the given root, i.e. with an
+        # element whose complete name is
+        #
+        #     el0::el1::el2::element
+        #
+        # then
+        #
+        #     element.full_name(root: el1) # => "el2::element"
+        #
+        # @param [nil,Element] root the root until which the name is built. Use
+        #   nil to stop at the XML root
+        # @return [String]
+        def full_name(root: nil)
+            if root && xml == root.xml
+                nil
+            elsif (p = parent) && (p_name = p.full_name(root: root))
                 p_name + '::' + name
             else
                 name

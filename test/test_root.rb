@@ -59,12 +59,43 @@ describe SDF::XML do
             root.each_model do |m|
                 model_names << m.name
             end
-            assert_equal(['simple test model'], model_names.sort)
+            assert_equal ['simple test model'], model_names
         end
         it "calls load_from_model_name if given a URI" do
             version = flexmock
-            flexmock(SDF::Root).should_receive(:load_from_model_name).once.with('model_in_uri', version).and_return(obj = flexmock)
+            flexmock(SDF::Root).should_receive(:load_from_model_name).once.with('model_in_uri', version, Hash).and_return(obj = flexmock)
             assert_equal obj, SDF::Root.load('model://model_in_uri', version)
+        end
+    end
+
+    describe "#find_all_included_models" do
+        it "returns the Model objects of the loaded models" do
+            root = SDF::Root.load_from_model_name('includes_at_each_level', flatten: false)
+            models = root.find_all_included_models('model://simple_model').map(&:full_name)
+
+            expected = [
+                'w::child_of_world',
+                'w::model::child_of_model',
+                'w::model::model_in_model::child_of_model_in_model',
+                'root_model::child_of_root_model',
+                'root_model::model_in_root_model::child_of_model_in_root_model'
+            ]
+            assert_equal expected, models
+        end
+
+        it "handles a full path" do
+            full_path = SDF::XML.model_path_from_name('simple_model')
+            root = SDF::Root.load_from_model_name('includes_at_each_level', flatten: false)
+            models = root.find_all_included_models(full_path).map(&:full_name)
+
+            expected = [
+                'w::child_of_world',
+                'w::model::child_of_model',
+                'w::model::model_in_model::child_of_model_in_model',
+                'root_model::child_of_root_model',
+                'root_model::model_in_root_model::child_of_model_in_root_model'
+            ]
+            assert_equal expected, models
         end
     end
 
