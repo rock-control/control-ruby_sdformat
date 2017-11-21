@@ -278,12 +278,12 @@ describe SDF::XML do
                     expected_pose = SDF::Conversions.pose_to_eigen("1 0 3 0 0 0.1")
                     assert_approx_equals expected_pose, link_pose
                 end
-                it "adds a pose tag to joints without poses to reflect the include pose" do
+                it "does not modify the joint's poses" do
                     sdf = sdf_model_in_model_that_replaces_pose_in_include
                     joint_pose = sdf.elements[
                         'sdf/world/model/joint[@name="model_with_pose::joint_without_pose"]/pose"']
                     joint_pose = SDF::Conversions.pose_to_eigen(joint_pose)
-                    expected_pose = SDF::Conversions.pose_to_eigen("1 0 3 0 0 0.1")
+                    expected_pose = SDF::Conversions.pose_to_eigen("0 0 0 0 0 0")
                     assert_approx_equals expected_pose, joint_pose
                 end
 
@@ -297,13 +297,12 @@ describe SDF::XML do
                     assert_approx_equals expected_pose, link_pose
                 end
 
-                it "transforms a joint's pose with the include pose" do
+                it "does not transform a joint's pose with the include pose" do
                     sdf = sdf_model_in_model_that_replaces_pose_in_include
                     joint_pose = sdf.elements[
                         'sdf/world/model/joint[@name="model_with_pose::joint_with_pose"]/pose"']
                     joint_pose = SDF::Conversions.pose_to_eigen(joint_pose)
-                    expected_pose = SDF::Conversions.pose_to_eigen("1 0 3 0 0 0.1") *
-                        SDF::Conversions.pose_to_eigen("2 1 2 0 0 2")
+                    expected_pose = SDF::Conversions.pose_to_eigen("2 1 2 0 0 2")
                     assert_approx_equals expected_pose, joint_pose
                 end
             end
@@ -449,7 +448,7 @@ describe SDF::XML do
             EOXML
             assert_xml_identical expected, flatten_model_tree(xml)
         end
-        it "transforms a frame element using the submodel's pose" do
+        it "does not transform a frame element" do
             xml = load_xml(<<-EOXML)
             <sdf>
             <model name="root"><pose>1 2 3 0 0 0.1</pose>
@@ -461,7 +460,7 @@ describe SDF::XML do
             EOXML
             xml = flatten_model_tree(xml)
             frame = SDF::Frame.new(xml.elements['model/frame'])
-            assert_approx_equals Eigen::Vector3.new(5, 7, 9), frame.pose.translation
+            assert_approx_equals Eigen::Vector3.new(3, 4, 5), frame.pose.translation
             assert_approx_equals Eigen::Quaternion.Identity, frame.pose.rotation
         end
         it "transforms a link element using the submodel's pose" do
@@ -479,7 +478,7 @@ describe SDF::XML do
             assert_approx_equals Eigen::Vector3.new(5, 7, 9), frame.pose.translation
             assert_approx_equals Eigen::Quaternion.Identity, frame.pose.rotation
         end
-        it "transforms a joint element using the submodel's pose" do
+        it "does not transform a joint element using the submodel's pose" do
             xml = load_xml(<<-EOXML)
             <sdf>
             <model name="root"><pose>1 2 3 0 0 0.1</pose>
@@ -491,14 +490,14 @@ describe SDF::XML do
             EOXML
             xml = flatten_model_tree(xml)
             joint = SDF::Joint.new(xml.elements['model/joint'])
-            assert_approx_equals Eigen::Vector3.new(5, 7, 9), joint.pose.translation
+            assert_approx_equals Eigen::Vector3.new(3, 4, 5), joint.pose.translation
             assert_approx_equals Eigen::Quaternion.Identity, joint.pose.rotation
         end
-        it "does not transform a joint's axis pose using the submodel's pose if it has use_parent_model_frame unset" do
+        it "transforms a joint's axis pose using the submodel's pose if use_parent_model_frame is unset" do
             xml = load_xml(<<-EOXML)
             <sdf>
             <model name="root"><pose>1 2 3 0 0 0.1</pose>
-            <model name="submodel"><pose>2 3 4 0 0 0</pose>
+            <model name="submodel"><pose>2 3 4 0 0 0.2</pose>
             <joint name="f">
                 <pose>3 4 5 0 0 0</pose>
                 <axis><xyz>0 1 2</xyz></axis>
@@ -509,9 +508,9 @@ describe SDF::XML do
             EOXML
             xml = flatten_model_tree(xml)
             axis = SDF::Axis.new(xml.elements['model/joint/axis'])
-            assert_approx_equals Eigen::Vector3.new(0, 1, 2), axis.xyz
+            assert_approx_equals (Eigen::Quaternion.from_angle_axis(0.2, Eigen::Vector3.UnitZ) * Eigen::Vector3.new(0, 1, 2)), axis.xyz
         end
-        it "rotates a joint's axis pose using the submodel's pose if it has use_parent_model_frame set" do
+        it "rotates a joint's axis pose using the submodel's pose if use_parent_model_frame is set" do
             xml = load_xml(<<-EOXML)
             <sdf>
             <model name="root"><pose>1 2 3 0 0 0.1</pose>
