@@ -243,7 +243,6 @@ module SDF
         end
 
         INCLUDE_CHILDREN_ELEMENTS = %w{static pose}
-        MODEL_IN_MODEL_TRANSFORMED_ELEMENTS = %w{link joint frame}
 
         # Resolves the include tags children of an element
         #
@@ -484,31 +483,28 @@ module SDF
 
             if model_pose
                 new.each do |element|
-                    # A joint's axis that has use_parent_model_frame needs to be
-                    # rotated according to the model's pose.
+                    # Apply the included element's pose
+                    #
+                    # Reference: parser.cc in libsdformat
                     if element.name == 'joint'
                         if axis_xml = element.elements['axis']
                             axis = Axis.new(axis_xml)
 
-                            if axis.use_parent_model_frame?
-                                xyz = model_pose.rotation * axis.xyz
-                                if xyz_xml = axis_xml.elements['xyz']
-                                    axis_xml.elements.delete(xyz_xml)
-                                end
-                                axis_xml.elements << SDF::Conversions.eigen_to_vector3(xyz)
+                            xyz = model_pose.rotation * axis.xyz
+                            if xyz_xml = axis_xml.elements['xyz']
+                                axis_xml.elements.delete(xyz_xml)
                             end
+                            axis_xml.elements << SDF::Conversions.eigen_to_vector3(xyz)
                         end
-                    elsif !MODEL_IN_MODEL_TRANSFORMED_ELEMENTS.include?(element.name)
-                        next
+                    elsif element.name == 'link'
+                        child_pose_element = element.elements['pose']
+                        child_pose = Conversions.pose_to_eigen(child_pose_element)
+                        child_pose = model_pose * child_pose
+                        if child_pose_element
+                            element.elements.delete(child_pose_element)
+                        end
+                        element << Conversions.eigen_to_pose(child_pose)
                     end
-
-                    child_pose_element = element.elements['pose']
-                    child_pose = Conversions.pose_to_eigen(child_pose_element)
-                    child_pose = model_pose * child_pose
-                    if child_pose_element
-                        element.elements.delete(child_pose_element)
-                    end
-                    element << Conversions.eigen_to_pose(child_pose)
                 end
             end
             new
