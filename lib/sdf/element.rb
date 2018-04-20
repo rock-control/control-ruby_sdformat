@@ -190,13 +190,15 @@ module SDF
 
         # Create a new SDF document where self is the first element inside the
         # <sdf></sdf> element
-        def make_root
+        def make_root(flatten: false)
             # Copy the SDF version from the Root object, if there is one
             r = root
             if r.respond_to?(:version)
                 version = r.version
             end
-            Root.make(xml.deep_clone, version)
+            xml = self.xml.deep_clone
+            XML.flatten_model_tree(xml) if flatten
+            Root.make(xml, version)
         end
 
         def self.from_xml_string(xml_string)
