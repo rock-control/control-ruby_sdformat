@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<sdf version="1.6">
+    <world name="empty_world">
+        <model name="dual_ur10_fixed">
+            <include>
+                <name>dual_ur10</name>
+                <uri>model://dual_ur10</uri>
+            </include>
+            <joint name="attached_to_ground" type="fixed">
+                <parent>world</parent>
+                <child>dual_ur10::base</child>
+            </joint>
+        </model>
+    </world>
+</sdf>

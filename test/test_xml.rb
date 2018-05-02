@@ -4,6 +4,9 @@ describe SDF::XML do
     def models_dir
         File.join(File.dirname(__FILE__), 'data', 'models')
     end
+    def regressions_dir
+        File.join(File.dirname(__FILE__), 'data', 'regressions')
+    end
     def invalid_models_dir
         File.join(File.dirname(__FILE__), 'data', 'invalid_models')
     end
@@ -190,6 +193,26 @@ describe SDF::XML do
                 assert_equal [model_full_path], metadata['includes'].keys
                 assert_equal expected.sort,
                     metadata['includes'][model_full_path].sort
+            end
+
+            it "properly resolves multi-level includes" do
+                SDF::XML.model_path = [regressions_dir]
+                _, metadata = SDF::XML.load_sdf(
+                    File.join(regressions_dir, 'dual_ur10.world'),
+                    metadata: true)
+
+                ur10_full_path = File.expand_path(File.join(
+                    'data', 'regressions', 'ur10', 'ur10.sdf'), __dir__)
+                dual_ur10_full_path = File.expand_path(File.join(
+                    'data', 'regressions', 'dual_ur10', 'model.sdf'), __dir__)
+                expected = Hash[
+                    ur10_full_path => %w[
+                        empty_world::dual_ur10_fixed::dual_ur10::left_arm
+                        empty_world::dual_ur10_fixed::dual_ur10::right_arm],
+                    dual_ur10_full_path => %w[empty_world::dual_ur10_fixed::dual_ur10]
+                ]
+
+                assert_equal expected, metadata['includes']
             end
 
             it "handles a include tag directly under root" do
@@ -548,4 +571,3 @@ describe SDF::XML do
         assert_equal expected_normalized, actual_normalized
     end
 end
-
