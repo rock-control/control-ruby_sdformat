@@ -1,8 +1,12 @@
 require 'sdf/test'
 
-describe SDF::XML do
+describe SDF::Root do
     def models_dir
         File.join(File.dirname(__FILE__), 'data', 'models')
+    end
+
+    def regressions_dir
+        File.join(File.dirname(__FILE__), 'data', 'regressions')
     end
 
     before do
@@ -15,12 +19,12 @@ describe SDF::XML do
     end
 
     describe "load_from_model_name" do
-        it "loads a gazebo model from name" do            
+        it "loads a gazebo model from name" do
             root = SDF::Root.load_from_model_name("simple_model")
             model = root.xml.elements.enum_for(:each, 'model').first
             assert_equal('simple test model', model.attributes['name'])
         end
-        it "returns the latest SDF version if max_version is nil" do                
+        it "returns the latest SDF version if max_version is nil" do
             root = SDF::Root.load_from_model_name("versioned_model")
             model = root.xml.elements.enum_for(:each, 'model').first
             assert_equal('versioned model 1.5', model.attributes['name'])
@@ -33,10 +37,10 @@ describe SDF::XML do
         it "raises if the version constraint is not matched" do
             assert_raises(SDF::XML::UnavailableSDFVersionInModel) do
                 SDF::Root.load_from_model_name("versioned_model",0)
-            end                
+            end
         end
     end
-    
+
     describe "load" do
         it "loads a SDF file if given a path" do
             root = SDF::Root.load(File.join(models_dir, "simple_model", "model.sdf"))
@@ -99,6 +103,63 @@ describe SDF::XML do
         end
     end
 
+    describe "#find_file_of" do
+        it "returns nil if there is no files involved" do
+            root = SDF::Root.new(REXML::Document.new(<<~SDF).root)
+                <sdf>
+                    <world name=\"w0\" />"
+                </sdf>").root)
+                SDF
+            refute root.find_file_of(root.each_world.first)
+        end
+        it "returns the toplevel file if there are no includes" do
+            root = SDF::Root.new(REXML::Document.new(<<~SDF).root)
+                <sdf>
+                    <world name=\"w0\" />"
+                </sdf>").root)
+                SDF
+            refute root.find_file_of(root.each_world.first)
+        end
+        it "returns the toplevel file for the root itself" do
+            root = SDF::Root.load_from_model_name(
+                'includes_at_each_level', flatten: false)
+            assert_equal File.join(models_dir, 'includes_at_each_level', 'model.sdf'),
+                root.find_file_of(root)
+        end
+        it "returns the toplevel file for an element defined by the main file" do
+            root = SDF::Root.load_from_model_name(
+                'includes_at_each_level', flatten: false)
+            assert_equal File.join(models_dir, 'includes_at_each_level', 'model.sdf'),
+                root.find_file_of(root.each_world.first)
+        end
+        it "returns the included file when given its root element" do
+            root = SDF::Root.load_from_model_name(
+                'includes_at_each_level', flatten: false)
+            assert_equal File.join(models_dir, 'simple_model', 'model.sdf'),
+                root.find_file_of(root.find_by_name("w::child_of_world"))
+        end
+        it "returns the included file when given a non-root element" do
+            root = SDF::Root.load_from_model_name(
+                'includes_at_each_level', flatten: false)
+            assert_equal File.join(models_dir, 'simple_model', 'model.sdf'),
+                root.find_file_of(root.find_by_name("w::child_of_world::link"))
+        end
+        it "returns the included file when given a root of an include-in-include" do
+            SDF::XML.model_path << regressions_dir
+            root = SDF::Root.load(
+                File.join(regressions_dir, 'dual_ur10.world'), flatten: false)
+            assert_equal File.join(regressions_dir, 'ur10', 'ur10.sdf'),
+                root.find_file_of(root.find_by_name("empty_world::dual_ur10_fixed::dual_ur10::left_arm"))
+        end
+        it "returns the included file when given a non-root element of an include-in-include" do
+            SDF::XML.model_path << regressions_dir
+            root = SDF::Root.load(
+                File.join(regressions_dir, 'dual_ur10.world'), flatten: false)
+            assert_equal File.join(regressions_dir, 'ur10', 'ur10.sdf'),
+                root.find_file_of(root.find_by_name("empty_world::dual_ur10_fixed::dual_ur10::left_arm::base"))
+        end
+    end
+
     describe "each_world" do
         it "does not yield anything if no worlds are defined" do
             root = SDF::Root.new(REXML::Document.new("<sdf></sdf>").root)
@@ -155,4 +216,3 @@ describe SDF::XML do
         end
     end
 end
-

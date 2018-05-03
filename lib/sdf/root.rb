@@ -13,7 +13,8 @@ module SDF
 
         def initialize(xml, metadata = Hash.new)
             super(xml)
-            @metadata = metadata
+            @metadata = metadata.dup
+            @metadata['includes'] ||= Hash.new
         end
 
         # Loads a SDF file
@@ -84,6 +85,25 @@ module SDF
                 else
                     raise ArgumentError, "#{full_name}, referred to as an included element for #{full_path} does not seem to exist, is this a flattened SDF tree ?"
                 end
+            end
+        end
+
+        # Returns the full path to the model that provided this element
+        def find_file_of(element)
+            return @metadata['path'] if element == self
+
+            name = element.full_name
+            candidates = @metadata['includes'].flat_map do |file_name, root_names|
+                    root_names.map do |n|
+                        match = (name == n) || name.start_with?("#{n}::")
+                        [file_name, n] if match
+                    end.compact
+                end
+
+            if (match = candidates.max_by { |_, name| name.size })
+                match[0]
+            else
+                @metadata['path']
             end
         end
 
