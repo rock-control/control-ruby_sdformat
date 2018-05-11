@@ -33,11 +33,19 @@ module SDF
         # Converts an Eigen pose to a SDF pose
         #
         # @return [REXML::Element]
-        def self.eigen_to_pose(pose)
+        def self.eigen_to_xyz_rpy(pose)
             x, y, z = pose.translation.to_a
             yaw, pitch, roll = pose.rotation.to_euler.to_a
+            [x, y, z, roll, pitch, yaw]
+        end
+
+        # Converts an Eigen pose to a SDF pose
+        #
+        # @return [REXML::Element]
+        def self.eigen_to_pose(pose)
+            values = eigen_to_xyz_rpy(pose)
             pose = REXML::Element.new("pose")
-            pose.text = "#{x} #{y} #{z} #{roll} #{pitch} #{yaw}"
+            pose.text = values.map(&:to_s).join(" ")
             pose
         end
 
