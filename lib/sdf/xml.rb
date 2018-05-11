@@ -42,15 +42,15 @@ module SDF
             @model_path = Array(path)
             clear_cache
         end
-        
+
         #load model_path with default parameters
         def self.initialize
             @model_path = (ENV['GAZEBO_MODEL_PATH'] || '').split(':')
             @model_path << File.join(Dir.home, '.gazebo', 'models')
         end
-        
+
         initialize
-        
+
         # Clears the model cache
         #
         # @return [void]
@@ -72,8 +72,8 @@ module SDF
         def self.load_gazebo_model(dir, sdf_version = nil, metadata: false, flatten: true)
             return load_sdf(model_path_of(dir, sdf_version), metadata: metadata, flatten:  flatten)
         end
-        
-        
+
+
         # Find model string into model.config path
         #
         # @param [String] dir the path to the model directory
@@ -84,7 +84,7 @@ module SDF
         # @raise [UnavailableSDFVersionInModel] if the model does not contain a
         #   SDF file for the required SDF version
         #
-        # @return [String]        
+        # @return [String]
         def self.model_path_of(dir, sdf_version = nil)
             model_config_path = File.join(dir, "model.config")
             config = File.open(model_config_path) do |io|
@@ -301,10 +301,6 @@ module SDF
                 includes[included_metadata['path']] << name
 
                 added_includes = included_metadata['includes']
-                prefix = "#{inc.attributes['name']}::"
-                added_includes.each do |_, sdf_node_paths|
-                    sdf_node_paths.map! { |p| "#{prefix}#{p}" }
-                end
                 includes.merge!(added_includes) do |_, old, new|
                     old + new
                 end
@@ -316,7 +312,7 @@ module SDF
 
                 replacements << [inc, included_elements.first, name, overrides]
             end
-                            
+
             replacements.each do |inc, model, name, overrides|
                 parent = inc.parent
                 inc.remove
@@ -371,7 +367,7 @@ module SDF
             end
             sdf
         end
-        
+
         # Get sdf_version
         #
         # @param [REXML::Element] sdf element
@@ -398,7 +394,7 @@ module SDF
         def self.load_sdf(sdf_file, flatten: true, metadata: false)
             sdf = load_sdf_raw(sdf_file)
             sdf_version = sdf_version_of(sdf)
-            
+
             sdf_metadata = Hash['includes' => Hash.new, 'path' => sdf_file]
             includes = add_include_tags(sdf.root, sdf_version, File.dirname(sdf_file))
             sdf_metadata['includes'].merge!(includes) do |_, old, new|
