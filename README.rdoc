@@ -1,12 +1,10 @@
 = sdf
 
-* http:// 
+* https://github.com/rock-control/control-ruby_sdformat
 
 == DESCRIPTION:
 
-Library to read SDF files from Rubyription
-
-ription
+Library to read SDF files from Ruby
 
 == FEATURES/PROBLEMS:
 
