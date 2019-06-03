@@ -316,5 +316,31 @@ module SDF
                 end
             end
         end
+
+        describe 'marshalling' do
+            before do
+                @xml = REXML::Document.new(<<-EOXML)
+                <sdf><world name="w">
+                    <model name="m">
+                        <link name="l" />
+                    </model>
+                </world></sdf>
+                EOXML
+            end
+
+            it 'can marshal and unmarshal roots' do
+                root = SDF::Root.new(@xml.root)
+                transfered = Marshal.load(Marshal.dump(root))
+                refute root.eql?(transfered)
+                assert_equal root, transfered
+            end
+
+            it 'can marshal and unmarshal specific elements' do
+                model = SDF::Root.new(@xml.root).each_world.first.each_model.first
+                transfered = Marshal.load(Marshal.dump(model))
+                refute model.eql?(transfered)
+                assert_equal model, transfered
+            end
+        end
     end
 end

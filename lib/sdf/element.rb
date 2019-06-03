@@ -206,6 +206,14 @@ module SDF
             Root.make(xml, version)
         end
 
+        def _dump(_lvl = -1)
+            to_xml_string
+        end
+
+        def self._load(xml_string)
+            from_xml_string(xml_string)
+        end
+
         def self.from_xml_string(xml_string)
             new(REXML::Document.new(xml_string).root)
         end
@@ -215,4 +223,3 @@ module SDF
         end
     end
 end
-
