@@ -183,7 +183,7 @@ module SDF
 
         def ==(other)
             self.class == other.class &&
-                xml == other.xml
+                (xml == other.xml || to_xml_string == other.to_xml_string)
         end
 
         def eql?(other)

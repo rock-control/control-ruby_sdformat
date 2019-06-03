@@ -127,14 +127,51 @@ module SDF
                 el1 = Class.new(Element) { @xml_tag_name = nil }.new(xml)
                 refute_equal el0, el1
             end
-            it 'returns false if the two elements have different xml' do
+            it 'returns true if the two elements have different xml but '\
+               'same definitions' do
                 el0 = Element.new(REXML::Document.new)
                 el1 = Element.new(REXML::Document.new)
+                assert_equal el0, el1
+            end
+            it 'returns true if the two elements have different definitions' do
+                xml0 = REXML::Document.new(
+                    '<e name="0"><e name="0.1" /><e name="0.2" /></e>'
+                )
+                xml1 = REXML::Document.new(
+                    '<e name="1"><e name="0.1" /><e name="0.2" /></e>'
+                )
+                el0 = Element.new(xml0)
+                el1 = Element.new(xml1)
                 refute_equal el0, el1
             end
             it 'returns false for an arbitrary object' do
                 el0 = Element.new(REXML::Document.new)
                 refute_equal Object.new, el0
+            end
+        end
+
+        describe '#eql?' do
+            it 'returns true if the two elements have the same XML and class' do
+                xml = REXML::Document.new
+                el0 = Element.new(xml)
+                el1 = Element.new(xml)
+                assert el0.eql?(el1)
+            end
+            it 'returns false if the two elements have different classes' do
+                xml = REXML::Document.new
+                el0 = Element.new(xml)
+                el1 = Class.new(Element) { @xml_tag_name = nil }.new(xml)
+                refute el0.eql?(el1)
+            end
+            it 'returns true if the two elements have different xml even '\
+               'if the XML documents are identical' do
+                el0 = Element.new(REXML::Document.new)
+                el1 = Element.new(REXML::Document.new)
+                refute el0.eql?(el1)
+            end
+            it 'returns false for an arbitrary object' do
+                el0 = Element.new(REXML::Document.new)
+                refute el0.eql?(Object.new)
             end
         end
 
