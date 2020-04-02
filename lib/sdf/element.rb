@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module SDF
     # Root class for all SDF elements
     #
@@ -38,9 +40,12 @@ module SDF
         def initialize(xml = REXML::Element.new(self.class.xml_tag_name), parent = nil)
             xml_tag_name = self.class.xml_tag_name
             if xml_tag_name && xml_tag_name != xml.name
-                raise ArgumentError, "expected the XML element to be a '#{xml_tag_name}' tag, but got #{xml.name.inspect} (#{xml})"
+                raise ArgumentError, 'expected the XML element to be '\
+                                     "a '#{xml_tag_name}' tag, but got "\
+                                     "#{xml.name.inspect} (#{xml})"
             end
-            @xml, @parent = xml, parent
+            @xml = xml
+            @parent = parent
         end
 
         # The element's root
@@ -48,9 +53,7 @@ module SDF
         # @return [Element]
         def root
             obj = self
-            while obj.parent
-                obj = obj.parent
-            end
+            obj = obj.parent while obj.parent
             obj
         end
 
@@ -91,11 +94,13 @@ module SDF
                 'sdf' => Root,
                 'link' => Link,
                 'joint' => Joint]
-            if klass = xml_to_class[xml.name]
+
+            if (klass = xml_to_class[xml.name])
                 return klass.new(xml, parent)
-            else
-                raise NotImplementedError, "don't know how to wrap the #{xml.name} XML element #{xml}"
             end
+
+            raise NotImplementedError, "don't know how to wrap the #{xml.name} "\
+                                       "XML element #{xml}"
         end
 
         def to_s
@@ -113,9 +118,9 @@ module SDF
         def find_by_name(name)
             xml.elements.each do |element|
                 element_name = element.attributes['name']
-                if name == element_name
-                    return Element.wrap(element, self)
-                elsif name.start_with?("#{element_name}::")
+                return Element.wrap(element, self) if name == element_name
+
+                if name.start_with?("#{element_name}::")
                     element = Element.wrap(element, self)
                     suffix  = name[(element_name.size + 2)..-1]
                     return element.find_by_name(suffix)
@@ -162,13 +167,15 @@ module SDF
             children = xml.elements.to_a(name)
             if children.empty?
                 if required
-                    raise Invalid, "expected #{self} to have a #{name} child element, but could not find one"
-                else
-                    child = xml.add_element(name)
-                    return klass.new(child, self)
+                    raise Invalid, "expected #{self} to have a #{name} child element, "\
+                                   'but could not find one'
                 end
+
+                child = xml.add_element(name)
+                return klass.new(child, self)
             elsif children.size > 1
-                raise Invalid, "more than one child matching #{name} found on #{self}, was expecting exactly one"
+                raise Invalid, "more than one child matching #{name} found on #{self}, "\
+                               'was expecting exactly one'
             else
                 klass.new(children.first, self)
             end
@@ -176,7 +183,7 @@ module SDF
 
         def ==(other)
             self.class == other.class &&
-                xml == other.xml
+                (xml == other.xml || to_xml_string == other.to_xml_string)
         end
 
         def eql?(other)
@@ -193,12 +200,18 @@ module SDF
         def make_root(flatten: false)
             # Copy the SDF version from the Root object, if there is one
             r = root
-            if r.respond_to?(:version)
-                version = r.version
-            end
+            version = r.version if r.respond_to?(:version)
             xml = self.xml.deep_clone
             XML.flatten_model_tree(xml) if flatten
             Root.make(xml, version)
+        end
+
+        def _dump(_lvl = -1)
+            to_xml_string
+        end
+
+        def self._load(xml_string)
+            from_xml_string(xml_string)
         end
 
         def self.from_xml_string(xml_string)
@@ -210,4 +223,3 @@ module SDF
         end
     end
 end
-

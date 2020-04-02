@@ -155,15 +155,13 @@ module SDF
         #   model in {model_path}
         # @return [REXML::Element]
         def self.model_path_from_name(model_name, model_path: @model_path, sdf_version: nil)
-            @gazebo_models[sdf_version] ||= Hash.new
+            @gazebo_models[sdf_version] ||= {}
             cache = (@gazebo_models[sdf_version][model_name] ||= ModelCacheEntry.new)
-            if cache.path
-                return cache.path
-            end
+            return cache.path if cache.path
 
             model_path.each do |p|
                 model_dir = File.join(p, model_name)
-                if File.file?(File.join(model_dir, "model.config"))
+                if File.file?(File.join(model_dir, 'model.config'))
                     cache.path = model_path_of(model_dir, sdf_version)
                     return cache.path
                 end
@@ -185,7 +183,7 @@ module SDF
         def self.model_from_name(model_name, sdf_version = nil, metadata: false, flatten: true)
             path = model_path_from_name(model_name, sdf_version: sdf_version)
             cache = @gazebo_models[sdf_version][model_name]
-            if !cache.xml
+            unless cache.xml
                 cache.xml, cache.metadata = load_sdf(path, metadata: true, flatten: false)
             end
             xml = cache.xml
@@ -195,9 +193,9 @@ module SDF
             end
 
             if metadata
-                return xml, cache.metadata
+                [xml, cache.metadata]
             else
-                return xml
+                xml
             end
         end
 
