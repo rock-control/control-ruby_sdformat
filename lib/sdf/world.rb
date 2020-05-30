@@ -36,7 +36,9 @@ module SDF
         # @return [SphericalCoordinates]
         # @raise Invalid if there is no such element in the SDF
         def spherical_coordinates
-            child_by_name('spherical_coordinates', SphericalCoordinates)
+            @spherical_coordinates ||= child_by_name(
+                'spherical_coordinates', SphericalCoordinates
+            )
         end
 
         # Enumerate the world-level plugins
