@@ -281,14 +281,14 @@ describe SDF::XML do
                 it "namespaces a joints parent link" do
                     sdf = sdf_model_in_model_that_replaces_pose_in_include
                     joint_without_pose = sdf.elements[
-                        'sdf/world/model/joint[@name="model_with_pose::joint_without_pose"]"']
+                        'sdf/world/model/joint[@name="model_with_pose::joint_without_pose"]']
                     assert_equal "model_with_pose::link_with_pose",
                         joint_without_pose.elements['parent'].text
                 end
                 it "namespaces a joints child link" do
                     sdf = sdf_model_in_model_that_replaces_pose_in_include
                     joint_without_pose = sdf.elements[
-                        'sdf/world/model/joint[@name="model_with_pose::joint_without_pose"]"']
+                        'sdf/world/model/joint[@name="model_with_pose::joint_without_pose"]']
                     assert_equal "model_with_pose::link_without_pose",
                         joint_without_pose.elements['child'].text
                 end
@@ -296,7 +296,7 @@ describe SDF::XML do
                 it "adds a pose tag to links without poses to reflect the include pose" do
                     sdf = sdf_model_in_model_that_replaces_pose_in_include
                     link_pose = sdf.elements[
-                        'sdf/world/model/link[@name="model_with_pose::link_without_pose"]/pose"']
+                        'sdf/world/model/link[@name="model_with_pose::link_without_pose"]/pose']
                     link_pose = SDF::Conversions.pose_to_eigen(link_pose)
                     expected_pose = SDF::Conversions.pose_to_eigen("1 0 3 0 0 0.1")
                     assert_approx_equals expected_pose, link_pose
@@ -304,7 +304,7 @@ describe SDF::XML do
                 it "does not modify the joint's poses" do
                     sdf = sdf_model_in_model_that_replaces_pose_in_include
                     joint_pose = sdf.elements[
-                        'sdf/world/model/joint[@name="model_with_pose::joint_without_pose"]/pose"']
+                        'sdf/world/model/joint[@name="model_with_pose::joint_without_pose"]/pose']
                     joint_pose = SDF::Conversions.pose_to_eigen(joint_pose)
                     expected_pose = SDF::Conversions.pose_to_eigen("0 0 0 0 0 0")
                     assert_approx_equals expected_pose, joint_pose
@@ -313,7 +313,7 @@ describe SDF::XML do
                 it "transforms a links's pose with the include pose" do
                     sdf = sdf_model_in_model_that_replaces_pose_in_include
                     link_pose = sdf.elements[
-                        'sdf/world/model/link[@name="model_with_pose::link_with_pose"]/pose"']
+                        'sdf/world/model/link[@name="model_with_pose::link_with_pose"]/pose']
                     link_pose = SDF::Conversions.pose_to_eigen(link_pose)
                     expected_pose = SDF::Conversions.pose_to_eigen("1 0 3 0 0 0.1") *
                         SDF::Conversions.pose_to_eigen("1 0 1 0 0 1")
@@ -323,7 +323,7 @@ describe SDF::XML do
                 it "does not transform a joint's pose with the include pose" do
                     sdf = sdf_model_in_model_that_replaces_pose_in_include
                     joint_pose = sdf.elements[
-                        'sdf/world/model/joint[@name="model_with_pose::joint_with_pose"]/pose"']
+                        'sdf/world/model/joint[@name="model_with_pose::joint_with_pose"]/pose']
                     joint_pose = SDF::Conversions.pose_to_eigen(joint_pose)
                     expected_pose = SDF::Conversions.pose_to_eigen("2 1 2 0 0 2")
                     assert_approx_equals expected_pose, joint_pose
