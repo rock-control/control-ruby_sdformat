@@ -68,7 +68,7 @@ module SDF
 
         # Converts a SDF boolean into a Ruby true/false value
         #
-        # @param [String,#text] boolean the SDF boolean ('true','false','0',1')
+        # @param [String,#text] text the SDF boolean ('true','false','0',1')
         # @return [Boolean]
         def self.to_boolean(text)
             if text.respond_to?(:text)

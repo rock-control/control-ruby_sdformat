@@ -5,7 +5,7 @@ module SDF
 
         # Load a model from its name
         #
-        # See {XML.find_and_load_gazebo_model}. This method raises if the model
+        # See {XML.model_from_name}. This method raises if the model
         # cannot be found
         #
         # @param [String] model_name the model name
