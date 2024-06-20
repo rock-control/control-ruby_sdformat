@@ -1,15 +1,13 @@
 module SDF
     class Link < Element
-        xml_tag_name 'link'
+        xml_tag_name "link"
 
         def initialize(xml, parent = nil)
             super
 
-            @sensors = Array.new
+            @sensors = []
             xml.elements.each do |child|
-                if child.name == 'sensor'
-                    @sensors << Sensor.new(child, self)
-                end
+                @sensors << Sensor.new(child, self) if child.name == "sensor"
             end
         end
 
@@ -30,9 +28,9 @@ module SDF
         # Check if link is kinematic
         #
         def kinematic?
-            if kinematic = xml.elements["kinematic"]
-                 Conversions.to_boolean(kinematic)
-            end
+            return unless kinematic = xml.elements["kinematic"]
+
+            Conversions.to_boolean(kinematic)
         end
 
         # The link's inertial.
@@ -55,7 +53,8 @@ module SDF
                     iyz = read_float_child_element(inertia, "iyz", 0)
                 end
             end
-            Inertial.new(pose, mass, Eigen::MatrixX.from_a([ixx,ixy,ixz, ixy,iyy,iyz, ixz,iyz,izz], 3, 3, false))
+            Inertial.new(pose, mass,
+                         Eigen::MatrixX.from_a([ixx, ixy, ixz, ixy, iyy, iyz, ixz, iyz, izz], 3, 3, false))
         end
 
         # @api private
@@ -69,16 +68,18 @@ module SDF
             if ret = element.elements[xpath]
                 return Float(ret.text)
             end
-            return default
+
+            default
         end
 
         xml = REXML::Element.new("link")
-        xml.attributes['name'] = '__world__'
+        xml.attributes["name"] = "__world__"
         World = Link.new(xml).freeze
 
         def each_frame
-            return enum_for(__method__) if !block_given?
-            xml.elements.to_a('frame').each do |frame_xml|
+            return enum_for(__method__) unless block_given?
+
+            xml.elements.to_a("frame").each do |frame_xml|
                 yield(Frame.new(frame_xml, self))
             end
         end

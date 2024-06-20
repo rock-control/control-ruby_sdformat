@@ -4,7 +4,7 @@ module SDF
     # Note that one would usually never get a "plain" sensor, only one of its
     # subclasses
     class Sensor < Element
-        xml_tag_name 'sensor'
+        xml_tag_name "sensor"
 
         # In SDF. there exists a sensor-specific block for each sensor type
         # (e.g. a sensor/ray element will contain the information specific to
@@ -20,7 +20,7 @@ module SDF
 
         # The sensor type
         def type
-            return xml.attributes['type']
+            xml.attributes["type"]
         end
 
         # The sensor's pose w.r.t. its parent
@@ -35,9 +35,9 @@ module SDF
         # @return [Float,nil]
         # @see update_rate
         def update_period
-            if rate = update_rate
-                1.0 / rate
-            end
+            return unless rate = update_rate
+
+            1.0 / rate
         end
 
         # The sensor's update rate in Hz, if specified
@@ -45,9 +45,9 @@ module SDF
         # @return [Integer,nil]
         # @see update_period
         def update_rate
-            if update_rate = xml.elements['update_rate']
-                Float(update_rate.text)
-            end
+            return unless update_rate = xml.elements["update_rate"]
+
+            Float(update_rate.text)
         end
     end
 end

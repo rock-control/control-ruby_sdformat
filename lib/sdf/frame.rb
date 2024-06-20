@@ -1,6 +1,6 @@
 module SDF
     class Frame < Element
-        xml_tag_name 'frame'
+        xml_tag_name "frame"
 
         # The model's frame w.r.t. its parent
         #

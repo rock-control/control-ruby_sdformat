@@ -1,8 +1,8 @@
-require 'sdf/test'
+require "sdf/test"
 
 describe SDF::Model do
     def models_dir
-        File.join(File.dirname(__FILE__), 'data', 'models')
+        File.join(File.dirname(__FILE__), "data", "models")
     end
 
     before do
@@ -23,22 +23,22 @@ describe SDF::Model do
     end
 
     describe "load_from_model_name" do
-        it "loads a gazebo model from name" do            
+        it "loads a gazebo model from name" do
             model = SDF::Model.load_from_model_name("simple_model")
-            assert_equal('simple test model', model.name)
+            assert_equal("simple test model", model.name)
         end
-        it "returns the latest SDF version if max_version is nil" do                
-            model= SDF::Model.load_from_model_name("versioned_model")
-            assert_equal('versioned model 1.5', model.name)
+        it "returns the latest SDF version if max_version is nil" do
+            model = SDF::Model.load_from_model_name("versioned_model")
+            assert_equal("versioned model 1.5", model.name)
         end
         it "returns the latest version matching max_version if provided" do
-            model = SDF::Model.load_from_model_name("versioned_model",130)
-            assert_equal('versioned model 1.3', model.name)
+            model = SDF::Model.load_from_model_name("versioned_model", 130)
+            assert_equal("versioned model 1.3", model.name)
         end
         it "raises if the version constraint is not matched" do
             assert_raises(SDF::XML::UnavailableSDFVersionInModel) do
-                SDF::Model.load_from_model_name("versioned_model",0)
-            end                
+                SDF::Model.load_from_model_name("versioned_model", 0)
+            end
         end
     end
 
@@ -54,8 +54,10 @@ describe SDF::Model do
                 <link name="child_l" />
             </model>
             EOXML
-            assert_equal model.find_link_by_name('parent_l'), model.find_joint_by_name('j').parent_link
-            assert_equal model.find_link_by_name('child_l'), model.find_joint_by_name('j').child_link
+            assert_equal model.find_link_by_name("parent_l"),
+                         model.find_joint_by_name("j").parent_link
+            assert_equal model.find_link_by_name("child_l"),
+                         model.find_joint_by_name("j").child_link
         end
     end
 
@@ -134,15 +136,18 @@ describe SDF::Model do
             EOXML
         end
 
-        it "find a joint in a toplevel model" do joint = @root.find_joint_by_name("root_j")
-            assert_equal @root.find_link_by_name('parent_l'), joint.parent_link
-            assert_equal @root.find_link_by_name('child_m::child_l'), joint.child_link
+        it "find a joint in a toplevel model" do
+            joint = @root.find_joint_by_name("root_j")
+            assert_equal @root.find_link_by_name("parent_l"),
+                         joint.parent_link
+            assert_equal @root.find_link_by_name("child_m::child_l"),
+                         joint.child_link
         end
 
         it "finds a joint in a child model" do
             joint = @root.find_joint_by_name("child_m::child_j")
-            assert_equal @root.find_link_by_name('child_m::parent_l'), joint.parent_link
-            assert_equal @root.find_link_by_name('child_m::child_l'), joint.child_link
+            assert_equal @root.find_link_by_name("child_m::parent_l"), joint.parent_link
+            assert_equal @root.find_link_by_name("child_m::child_l"), joint.child_link
         end
     end
 
@@ -160,11 +165,13 @@ describe SDF::Model do
         end
 
         it "finds a link in a toplevel model" do
-            assert_equal @xml.elements['/model/link'], @root.find_link_by_name('parent_l').xml
+            assert_equal @xml.elements["/model/link"],
+                         @root.find_link_by_name("parent_l").xml
         end
 
         it "find a link in a child model" do
-            assert_equal @xml.elements['/model/model/link'], @root.find_link_by_name('child_m::parent_l').xml
+            assert_equal @xml.elements["/model/model/link"],
+                         @root.find_link_by_name("child_m::parent_l").xml
         end
     end
 
@@ -175,7 +182,7 @@ describe SDF::Model do
         end
         it "returns the converted value if a static tag is present" do
             xml = REXML::Document.new("<model><static>foobar</static></model>").root
-            flexmock(SDF::Conversions).should_receive(:to_boolean).once.with(xml.elements['static']).and_return(v = flexmock)
+            flexmock(SDF::Conversions).should_receive(:to_boolean).once.with(xml.elements["static"]).and_return(v = flexmock)
             assert_equal v, SDF::Model.new(xml).static?
         end
     end
@@ -186,7 +193,8 @@ describe SDF::Model do
             model = SDF::Model.new(xml)
             p = model.pose
             assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
-            assert Eigen::Quaternion.from_angle_axis(2, Eigen::Vector3.UnitZ).approx?(p.rotation)
+            assert Eigen::Quaternion.from_angle_axis(2,
+                                                     Eigen::Vector3.UnitZ).approx?(p.rotation)
         end
     end
 
@@ -199,7 +207,7 @@ describe SDF::Model do
         it "returns the first link at its level for root models" do
             xml = REXML::Document.new('<model><link name="l" /></model>').root
             model = SDF::Model.new(xml)
-            assert_equal 'l', model.canonical_link.name
+            assert_equal "l", model.canonical_link.name
         end
         it "returns the parent's model canonical link for submodels, if it has one" do
             xml = REXML::Document.new('<model><link name="l" /><model name="sub" /></model>').root
@@ -244,7 +252,7 @@ describe SDF::Model do
             </model>
             EOXML
             model = SDF::Model.new(xml)
-            assert_equal ['test0', 'test1'], model.each_model.map(&:name)
+            assert_equal %w[test0 test1], model.each_model.map(&:name)
         end
 
         it "enumerates its children model's models" do
@@ -258,8 +266,10 @@ describe SDF::Model do
             </model>
             EOXML
             model = SDF::Model.new(xml)
-            assert_equal [['test0', 'test0'], ['test1', 'test0::test1'], ['test2', 'test0::test1::test2']],
-                model.each_model_with_name.map { |model, name| [model.name, name] }
+            assert_equal([["test0", "test0"], ["test1", "test0::test1"], ["test2", "test0::test1::test2"]],
+                         model.each_model_with_name.map do |model, name|
+                             [model.name, name]
+                         end)
         end
     end
 
@@ -272,7 +282,7 @@ describe SDF::Model do
             </model>
             EOXML
             model = SDF::Model.new(xml)
-            assert_equal ['test0', 'test1'], model.each_link.map(&:name)
+            assert_equal %w[test0 test1], model.each_link.map(&:name)
         end
 
         it "enumerates its children model's links" do
@@ -288,8 +298,8 @@ describe SDF::Model do
             </model>
             EOXML
             model = SDF::Model.new(xml)
-            assert_equal [['test0', 'test0'], ['test1', 'sub::test1'], ['test2', 'sub::subsub::test2']],
-                model.each_link_with_name.map { |link, name| [link.name, name] }
+            assert_equal([["test0", "test0"], ["test1", "sub::test1"], ["test2", "sub::subsub::test2"]],
+                         model.each_link_with_name.map { |link, name| [link.name, name] })
         end
     end
 
@@ -302,7 +312,7 @@ describe SDF::Model do
             </model>
             EOXML
             model = SDF::Model.new(xml)
-            assert_equal ['test0', 'test1'], model.each_frame.map(&:name)
+            assert_equal %w[test0 test1], model.each_frame.map(&:name)
         end
 
         it "enumerates its children model's frames" do
@@ -315,9 +325,10 @@ describe SDF::Model do
             </model>
             EOXML
             model = SDF::Model.new(xml)
-            assert_equal [['test0', 'sub::test0'], ['test1', 'sub::test1']],
-                model.each_frame_with_name.map { |frame, name| [frame.name, name] }
+            assert_equal([["test0", "sub::test0"], ["test1", "sub::test1"]],
+                         model.each_frame_with_name.map do |frame, name|
+                             [frame.name, name]
+                         end)
         end
     end
 end
-

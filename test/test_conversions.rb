@@ -1,4 +1,4 @@
-require 'sdf/test'
+require "sdf/test"
 
 module SDF
     module Conversions
@@ -9,7 +9,8 @@ module SDF
                 xml = REXML::Document.new("<pose>1 2 3 0 -0 2</pose>").root
                 p = Conversions.pose_to_eigen(xml)
                 assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
-                assert Eigen::Quaternion.from_angle_axis(2, Eigen::Vector3.UnitZ).approx?(p.rotation)
+                assert Eigen::Quaternion.from_angle_axis(2,
+                                                         Eigen::Vector3.UnitZ).approx?(p.rotation)
             end
 
             it "returns identity if given nil" do
@@ -22,14 +23,16 @@ module SDF
                 xml = REXML::Document.new("<pose>\n1 2 3 0 -0 2 </pose>").root
                 p = Conversions.pose_to_eigen(xml)
                 assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
-                assert Eigen::Quaternion.from_angle_axis(2, Eigen::Vector3.UnitZ).approx?(p.rotation)
+                assert Eigen::Quaternion.from_angle_axis(2,
+                                                         Eigen::Vector3.UnitZ).approx?(p.rotation)
             end
 
             it "parses elements separated by an arbitrary amount of spaces" do
                 xml = REXML::Document.new("<pose>\n1 2\t3    0\n\n-0 2 </pose>").root
                 p = Conversions.pose_to_eigen(xml)
                 assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
-                assert Eigen::Quaternion.from_angle_axis(2, Eigen::Vector3.UnitZ).approx?(p.rotation)
+                assert Eigen::Quaternion.from_angle_axis(2,
+                                                         Eigen::Vector3.UnitZ).approx?(p.rotation)
             end
 
             describe "when given a string, it provides plain error messages" do
@@ -69,7 +72,8 @@ module SDF
                     e = assert_raises(Invalid) do
                         Conversions.pose_to_eigen(xml)
                     end
-                    assert_equal "in /pose: '1 2 3 0 -0' has 5 entries, expected 6", e.message
+                    assert_equal "in /pose: '1 2 3 0 -0' has 5 entries, expected 6",
+                                 e.message
                 end
 
                 it "raises if there are too many elements" do
@@ -77,7 +81,8 @@ module SDF
                     e = assert_raises(Invalid) do
                         Conversions.pose_to_eigen(xml)
                     end
-                    assert_equal "in /pose: '1 2 3 0 -0 0 1' has 7 entries, expected 6", e.message
+                    assert_equal "in /pose: '1 2 3 0 -0 0 1' has 7 entries, expected 6",
+                                 e.message
                 end
             end
         end
@@ -163,12 +168,13 @@ module SDF
                     e = assert_raises(Invalid) do
                         Conversions.vector3_to_eigen(xml)
                     end
-                    assert_equal "in /pose: '1 2 3 4' has 4 entries, expected 3", e.message
+                    assert_equal "in /pose: '1 2 3 4' has 4 entries, expected 3",
+                                 e.message
                 end
             end
         end
 
-        describe 'to_boolean' do
+        describe "to_boolean" do
             it "returns true for the 'true' string" do
                 xml = REXML::Document.new("<b>true</b>").root
                 assert_same true, Conversions.to_boolean(xml)
@@ -200,18 +206,17 @@ module SDF
                     Conversions.to_boolean("bla")
                 end
                 assert_equal "invalid boolean value 'bla', expected true or false",
-                    e.message
+                             e.message
             end
-            it "raises Invalid for anything else,"\
+            it "raises Invalid for anything else," \
                "adding the XPath when given an element" do
                 xml = REXML::Document.new("<b>bla</b>").root
                 e = assert_raises(Invalid) do
                     Conversions.to_boolean(xml)
                 end
                 assert_equal "in /b: invalid boolean value 'bla', expected true or false",
-                    e.message
+                             e.message
             end
         end
     end
 end
-

@@ -1,26 +1,26 @@
 # simplecov must be loaded FIRST. Only the files required after it gets loaded
 # will be profiled !!!
-if ENV['TEST_ENABLE_COVERAGE'] == '1'
+if ENV["TEST_ENABLE_COVERAGE"] == "1"
     begin
-        require 'simplecov'
+        require "simplecov"
         SimpleCov.start
     rescue LoadError
-        require 'sdf'
+        require "sdf"
         SDF.warn "coverage is disabled because the 'simplecov' gem cannot be loaded"
     rescue Exception => e
-        require 'sdf'
+        require "sdf"
         SDF.warn "coverage is disabled: #{e.message}"
     end
 end
 
-require 'sdf'
-require 'minitest/autorun'
-require 'minitest/spec'
-require 'flexmock/minitest'
+require "sdf"
+require "minitest/autorun"
+require "minitest/spec"
+require "flexmock/minitest"
 
-if ENV['TEST_ENABLE_PRY'] != '0'
+if ENV["TEST_ENABLE_PRY"] != "0"
     begin
-        require 'pry'
+        require "pry"
     rescue Exception
         SDF.warn "debugging is disabled because the 'pry' gem cannot be loaded"
     end
@@ -48,7 +48,8 @@ module SDF
         end
 
         def assert_approx_equals(expected, actual, delta = 1e-6)
-            assert expected.approx?(actual, delta), "expected #{actual} to be approximately equal to #{expected}"
+            assert expected.approx?(actual, delta),
+                   "expected #{actual} to be approximately equal to #{expected}"
         end
     end
 end

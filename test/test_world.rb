@@ -1,4 +1,4 @@
-require 'sdf/test'
+require "sdf/test"
 
 module SDF
     describe World do
@@ -15,14 +15,15 @@ module SDF
                 models.each do |l|
                     assert_kind_of SDF::Model, l
                     assert_same root, l.parent
-                    assert_equal root.xml.elements.to_a("model[@name=\"#{l.name}\"]"), [l.xml]
+                    assert_equal root.xml.elements.to_a("model[@name=\"#{l.name}\"]"),
+                                 [l.xml]
                 end
             end
         end
         describe ".empty" do
             it "creates a world with no models" do
-                world = World.empty(name: 'test')
-                assert_equal 'test', world.name
+                world = World.empty(name: "test")
+                assert_equal "test", world.name
                 assert_kind_of World, world
                 assert_equal [], world.each_model.to_a
             end

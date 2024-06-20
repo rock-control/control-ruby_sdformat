@@ -1,13 +1,13 @@
 module SDF
     class Axis < Element
-        xml_tag_name 'axis'
+        xml_tag_name "axis"
 
         def xyz
-            Conversions.vector3_to_eigen(xml.elements['xyz'])
+            Conversions.vector3_to_eigen(xml.elements["xyz"])
         end
 
         def use_parent_model_frame?
-            if flag = xml.elements['use_parent_model_frame']
+            if flag = xml.elements["use_parent_model_frame"]
                 Conversions.to_boolean(flag)
             else
                 false
@@ -15,7 +15,7 @@ module SDF
         end
 
         def limit
-            child_by_name('limit', AxisLimit, false)
+            child_by_name("limit", AxisLimit, false)
         end
     end
 end

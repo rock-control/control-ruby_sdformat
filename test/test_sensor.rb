@@ -1,4 +1,4 @@
-require 'sdf/test'
+require "sdf/test"
 
 module SDF
     describe Sensor do
@@ -20,7 +20,7 @@ module SDF
             it "returns the period in seconds" do
                 xml = REXML::Document.new("<sensor><update_rate>22.1</update_rate></sensor>").root
                 sensor = Sensor.new(xml)
-                assert_in_delta (1.0/22.1), sensor.update_period, 1e-6
+                assert_in_delta (1.0 / 22.1), sensor.update_period, 1e-6
             end
             it "returns nil if the rate is not defined" do
                 xml = REXML::Document.new("<sensor/>").root

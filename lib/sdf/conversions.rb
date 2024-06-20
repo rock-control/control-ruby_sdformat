@@ -2,14 +2,12 @@ module SDF
     module Conversions
         def self.pose_to_xyz_rpy(pose)
             xml = nil
-            if pose
-                values = parse_number_array(pose, 6)
-                xyz = values[0, 3]
-                rpy = values[3, 3]
-                return xyz, rpy
-            else
-                return [0, 0, 0], [0, 0, 0]
-            end
+            return [0, 0, 0], [0, 0, 0] unless pose
+
+            values = parse_number_array(pose, 6)
+            xyz = values[0, 3]
+            rpy = values[3, 3]
+            [xyz, rpy]
         end
 
         # Converts a SDF pose to an eigen vector3 and Quaternion
@@ -27,7 +25,7 @@ module SDF
             pose = Eigen::Isometry3.new
             pose.translate(Eigen::Vector3.new(*xyz))
             pose.rotate(q)
-            return pose
+            pose
         end
 
         # Converts an Eigen pose to a SDF pose
@@ -55,12 +53,10 @@ module SDF
         #   nil, in which case a zero translation is returned
         # @return [Eigen::Vector3]
         def self.vector3_to_eigen(vector3)
-            if vector3
-                values = parse_number_array(vector3, 3)
-                return Eigen::Vector3.new(*values)
-            else
-                return Eigen::Vector3.Zero
-            end
+            return Eigen::Vector3.Zero unless vector3
+
+            values = parse_number_array(vector3, 3)
+            Eigen::Vector3.new(*values)
         end
 
         # Converts an Eigen vector into a SDF vector3
@@ -80,13 +76,13 @@ module SDF
                 text = xml.text
             end
             text = text.strip
-            if text == 'true' || text == '1'
+            if %w[true 1].include?(text)
                 true
-            elsif text == 'false' || text == '0'
+            elsif %w[false 0].include?(text)
                 false
             else
                 raise Invalid, invalid_message_with_xpath(xml,
-                    "invalid boolean value '#{text}', expected true or false")
+                                                          "invalid boolean value '#{text}', expected true or false")
             end
         end
 
@@ -113,12 +109,12 @@ module SDF
                 values = text.split(/\s+/).map { |v| Float(v) }
             rescue ArgumentError
                 raise Invalid, invalid_message_with_xpath(xml,
-                    "invalid number in '#{text}'")
+                                                          "invalid number in '#{text}'")
             end
 
             unless expected_size == values.size
                 raise Invalid, invalid_message_with_xpath(xml,
-                    "'#{text}' has #{values.size} entries, expected #{expected_size}")
+                                                          "'#{text}' has #{values.size} entries, expected #{expected_size}")
             end
             values
         end
@@ -139,6 +135,5 @@ module SDF
                 message
             end
         end
-
     end
 end
