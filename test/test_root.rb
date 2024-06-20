@@ -69,7 +69,7 @@ describe SDF::Root do
         it "calls load_from_model_name if given a URI" do
             version = flexmock
             flexmock(SDF::Root).should_receive(:load_from_model_name).once.with(
-                "model_in_uri", version, Hash
+                "model_in_uri", version, flatten: true
             ).and_return(obj = flexmock)
             assert_equal obj, SDF::Root.load("model://model_in_uri", version)
         end
