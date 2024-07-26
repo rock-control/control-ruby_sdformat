@@ -108,7 +108,7 @@ describe SDF::Root do
             root = SDF::Root.new(REXML::Document.new(<<~SDF).root)
                 <sdf>
                     <world name=\"w0\" />"
-                </sdf>").root)
+                </sdf>
                 SDF
             refute root.find_file_of(root.each_world.first)
         end
@@ -116,7 +116,7 @@ describe SDF::Root do
             root = SDF::Root.new(REXML::Document.new(<<~SDF).root)
                 <sdf>
                     <world name=\"w0\" />"
-                </sdf>").root)
+                </sdf>
                 SDF
             refute root.find_file_of(root.each_world.first)
         end
