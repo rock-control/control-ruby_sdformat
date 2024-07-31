@@ -1,4 +1,4 @@
-require 'sdf/test'
+require "sdf/test"
 
 module SDF
     describe Link do
@@ -8,7 +8,8 @@ module SDF
                 link = Link.new(xml)
                 p = link.pose
                 assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
-                assert Eigen::Quaternion.from_angle_axis(2, Eigen::Vector3.UnitZ).approx?(p.rotation)
+                assert Eigen::Quaternion.from_angle_axis(2,
+                                                         Eigen::Vector3.UnitZ).approx?(p.rotation)
             end
         end
 
@@ -19,8 +20,10 @@ module SDF
                 i = link.inertial
                 assert_equal 350.5, i.mass
                 assert Eigen::Vector3.new(1, 1.2, 3).approx?(i.pose.translation)
-                assert Eigen::Quaternion.from_angle_axis(2, Eigen::Vector3.UnitZ).approx?(i.pose.rotation)
-                assert (Eigen::MatrixX.from_a([1,0,0, 0,1,0, 0,0,1], 3, 3, false) == i.inertia)
+                assert Eigen::Quaternion.from_angle_axis(2,
+                                                         Eigen::Vector3.UnitZ).approx?(i.pose.rotation)
+                assert(Eigen::MatrixX.from_a([1, 0, 0, 0, 1, 0, 0, 0, 1], 3, 3,
+                                             false) == i.inertia)
             end
 
             it "returns the link's inertia" do
@@ -30,7 +33,8 @@ module SDF
                 assert_equal 350.5, i.mass
                 assert Eigen::Vector3.new(0, 0, 0).approx?(i.pose.translation)
                 assert Eigen::Quaternion.Identity.approx?(i.pose.rotation)
-                assert (Eigen::MatrixX.from_a([100,1,2, 1,150,3, 2,3,200], 3, 3, false) == i.inertia)
+                assert(Eigen::MatrixX.from_a([100, 1, 2, 1, 150, 3, 2, 3, 200], 3, 3,
+                                             false) == i.inertia)
             end
 
             it "returns the link's default inertial" do
@@ -38,9 +42,10 @@ module SDF
                 link = Link.new(xml)
                 i = link.inertial
                 assert_equal 1, i.mass
-                assert Eigen::Vector3.new(0,0,0).approx?(i.pose.translation)
+                assert Eigen::Vector3.new(0, 0, 0).approx?(i.pose.translation)
                 assert Eigen::Quaternion.Identity.approx?(i.pose.rotation)
-                assert (Eigen::MatrixX.from_a([1,0,0, 0,1,0, 0,0,1], 3, 3, false) == i.inertia)
+                assert(Eigen::MatrixX.from_a([1, 0, 0, 0, 1, 0, 0, 0, 1], 3, 3,
+                                             false) == i.inertia)
             end
         end
 
@@ -68,7 +73,7 @@ module SDF
                 EOXML
                 link = Link.new(xml)
                 frames = link.each_frame.to_a
-                assert_equal ['test0', 'test1'], frames.map(&:name)
+                assert_equal %w[test0 test1], frames.map(&:name)
                 assert_equal link, frames.first.parent
             end
         end

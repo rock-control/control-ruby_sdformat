@@ -1,8 +1,9 @@
-require 'sdf/test'
+require "sdf/test"
 
 module SDF
     describe Joint do
         attr_reader :xml, :model, :joint
+
         before do
             @xml = REXML::Document.new(<<-EOD
                     <model>
@@ -21,8 +22,8 @@ module SDF
                             <child>world</child>
                         </joint>
                     </model>
-                    EOD
-            )
+            EOD
+                                      )
 
             @model = Model.new(xml.root)
             @joint = model.find_joint_by_name("joint")
@@ -31,11 +32,15 @@ module SDF
         describe "#initialize" do
             it "raises Invalid if there is no parent element" do
                 xml = REXML::Document.new("<joint><child>test</child></joint>").root
-                assert_raises(Invalid) { Joint.new(xml, flexmock(find_link_by_name: Object.new)) }
+                assert_raises(Invalid) do
+                    Joint.new(xml, flexmock(find_link_by_name: Object.new))
+                end
             end
             it "raises Invalid if there is no child element" do
                 xml = REXML::Document.new("<joint><parent>test</parent></joint>").root
-                assert_raises(Invalid) { Joint.new(xml, flexmock(find_link_by_name: Object.new)) }
+                assert_raises(Invalid) do
+                    Joint.new(xml, flexmock(find_link_by_name: Object.new))
+                end
             end
             it "raises Invalid if the specified parent link cannot be found" do
                 xml.root.delete_element(model.xml.elements.to_a("link[@name='parent_l']").first)
@@ -60,7 +65,7 @@ module SDF
             end
             it "returns the type as a string" do
                 xml = REXML::Document.new("<joint type='revolute'/>").root
-                assert_equal 'revolute', Joint.new(xml).type
+                assert_equal "revolute", Joint.new(xml).type
             end
         end
 
@@ -70,28 +75,29 @@ module SDF
                 joint = Joint.new(xml)
                 p = joint.pose
                 assert Eigen::Vector3.new(1, 2, 3).approx?(p.translation)
-                assert Eigen::Quaternion.from_angle_axis(2, Eigen::Vector3.UnitZ).approx?(p.rotation)
+                assert Eigen::Quaternion.from_angle_axis(2,
+                                                         Eigen::Vector3.UnitZ).approx?(p.rotation)
             end
         end
 
         describe "#parent_link" do
             it "returns the special World link if the parent link is 'world'" do
-                joint = model.find_joint_by_name('attached_to_world_from_parent')
+                joint = model.find_joint_by_name("attached_to_world_from_parent")
                 assert_equal Link::World, joint.parent_link
             end
             it "returns the Link object that is the joint's parent" do
-                assert_equal model.find_link_by_name('parent_l'),
-                    joint.parent_link
+                assert_equal model.find_link_by_name("parent_l"),
+                             joint.parent_link
             end
         end
         describe "#child_link" do
             it "returns the special World link if the child link is 'world'" do
-                joint = model.find_joint_by_name('attached_to_world_from_child')
+                joint = model.find_joint_by_name("attached_to_world_from_child")
                 assert_equal Link::World, joint.child_link
             end
             it "returns the Link object that is the joint's child" do
-                assert_equal model.find_link_by_name('child_l'),
-                    joint.child_link
+                assert_equal model.find_link_by_name("child_l"),
+                             joint.child_link
             end
         end
 
@@ -108,7 +114,7 @@ module SDF
                 axis = joint.axis
                 assert_kind_of Axis, axis
                 assert_same joint, axis.parent
-                assert_equal xml.elements['axis'], axis.xml
+                assert_equal xml.elements["axis"], axis.xml
             end
         end
 
@@ -118,7 +124,8 @@ module SDF
                 joint = Joint.new(xml)
                 t = joint.transform_for(1)
                 assert_equal Eigen::Vector3.Zero, t.translation
-                assert Eigen::Quaternion.from_angle_axis(1, Eigen::Vector3.UnitX).approx?(t.rotation)
+                assert Eigen::Quaternion.from_angle_axis(1,
+                                                         Eigen::Vector3.UnitX).approx?(t.rotation)
             end
             it "computes the transformation of prismatic joints" do
                 xml = REXML::Document.new("<joint type='prismatic'><axis><xyz>1 0 0</xyz></axis></joint>").root
@@ -136,10 +143,9 @@ module SDF
                 EOXML
                 joint = Joint.new(xml)
                 frames = joint.each_frame.to_a
-                assert_equal ['test0', 'test1'], frames.map(&:name)
+                assert_equal %w[test0 test1], frames.map(&:name)
                 assert_equal joint, frames.first.parent
             end
         end
     end
 end
-

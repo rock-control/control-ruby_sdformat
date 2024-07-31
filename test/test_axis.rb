@@ -1,4 +1,4 @@
-require 'sdf/test'
+require "sdf/test"
 
 module SDF
     describe Axis do
@@ -24,9 +24,8 @@ module SDF
                 limit = axis.limit
                 assert_kind_of AxisLimit, limit
                 assert_same axis, limit.parent
-                assert_equal xml.elements['limit'], limit.xml
+                assert_equal xml.elements["limit"], limit.xml
             end
         end
     end
 end
-

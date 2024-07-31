@@ -1,6 +1,6 @@
 module SDF
     class AxisLimit < Element
-        xml_tag_name 'limit'
+        xml_tag_name "limit"
 
         # @api private
         def read(element_name, default_value)
@@ -12,20 +12,19 @@ module SDF
         end
 
         def lower
-            read('lower', nil)
+            read("lower", nil)
         end
 
         def upper
-            read('upper', nil)
+            read("upper", nil)
         end
 
         def effort
-            read('effort', nil)
+            read("effort", nil)
         end
 
         def velocity
-            read('velocity', nil)
+            read("velocity", nil)
         end
     end
 end
-

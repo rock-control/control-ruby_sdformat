@@ -40,8 +40,8 @@ module SDF
         def initialize(xml = REXML::Element.new(self.class.xml_tag_name), parent = nil)
             xml_tag_name = self.class.xml_tag_name
             if xml_tag_name && xml_tag_name != xml.name
-                raise ArgumentError, 'expected the XML element to be '\
-                                     "a '#{xml_tag_name}' tag, but got "\
+                raise ArgumentError, "expected the XML element to be " \
+                                     "a '#{xml_tag_name}' tag, but got " \
                                      "#{xml.name.inspect} (#{xml})"
             end
             @xml = xml
@@ -61,12 +61,12 @@ module SDF
         #
         # @return [String]
         def name
-            xml.attributes['name']
+            xml.attributes["name"]
         end
 
         # Change the element name
         def name=(name)
-            xml.attributes['name'] = name
+            xml.attributes["name"] = name
         end
 
         # The XPath from the root this element
@@ -89,17 +89,17 @@ module SDF
 
         def self.wrap(xml, parent = nil)
             xml_to_class = Hash[
-                'world' => World,
-                'model' => Model,
-                'sdf' => Root,
-                'link' => Link,
-                'joint' => Joint]
+                "world" => World,
+                "model" => Model,
+                "sdf" => Root,
+                "link" => Link,
+                "joint" => Joint]
 
             if (klass = xml_to_class[xml.name])
                 return klass.new(xml, parent)
             end
 
-            raise NotImplementedError, "don't know how to wrap the #{xml.name} "\
+            raise NotImplementedError, "don't know how to wrap the #{xml.name} " \
                                        "XML element #{xml}"
         end
 
@@ -117,7 +117,7 @@ module SDF
         # @return [Element,nil]
         def find_by_name(name)
             xml.elements.each do |element|
-                element_name = element.attributes['name']
+                element_name = element.attributes["name"]
                 return Element.wrap(element, self) if name == element_name
 
                 if name.start_with?("#{element_name}::")
@@ -147,7 +147,7 @@ module SDF
             if root && xml == root.xml
                 nil
             elsif (p = parent) && (p_name = p.full_name(root: root))
-                p_name + '::' + name
+                p_name + "::" + name
             else
                 name
             end
@@ -167,15 +167,15 @@ module SDF
             children = xml.elements.to_a(name)
             if children.empty?
                 if required
-                    raise Invalid, "expected #{self} to have a #{name} child element, "\
-                                   'but could not find one'
+                    raise Invalid, "expected #{self} to have a #{name} child element, " \
+                                   "but could not find one"
                 end
 
                 child = xml.add_element(name)
-                return klass.new(child, self)
+                klass.new(child, self)
             elsif children.size > 1
-                raise Invalid, "more than one child matching #{name} found on #{self}, "\
-                               'was expecting exactly one'
+                raise Invalid, "more than one child matching #{name} found on #{self}, " \
+                               "was expecting exactly one"
             else
                 klass.new(children.first, self)
             end

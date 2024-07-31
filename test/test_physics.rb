@@ -1,4 +1,4 @@
-require 'sdf/test'
+require "sdf/test"
 
 module SDF
     describe Physics do
@@ -21,7 +21,7 @@ module SDF
             it "returns the period in seconds" do
                 xml = REXML::Document.new("<physics><real_time_update_rate>22</real_time_update_rate></physics>").root
                 physics = Physics.new(xml)
-                assert_in_delta (1.0/22.0), physics.real_time_update_period, 1e-6
+                assert_in_delta (1.0 / 22.0), physics.real_time_update_period, 1e-6
             end
             it "returns nil if the rate is not defined" do
                 xml = REXML::Document.new("<physics/>").root
@@ -47,7 +47,8 @@ module SDF
             it "returns the period as a floating-point value" do
                 xml = REXML::Document.new("<physics><real_time_update_rate>22</real_time_update_rate><real_time_factor>0.1</real_time_factor></physics>").root
                 physics = Physics.new(xml)
-                assert_in_delta (1.0/22.0 * 0.1), physics.simulation_time_update_period, 1e-6
+                assert_in_delta (1.0 / 22.0 * 0.1), physics.simulation_time_update_period,
+                                1e-6
             end
             it "returns nil if the update rate is not specified" do
                 xml = REXML::Document.new("<physics/>").root
@@ -57,4 +58,3 @@ module SDF
         end
     end
 end
-

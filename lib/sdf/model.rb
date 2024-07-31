@@ -1,7 +1,7 @@
 module SDF
     # Representation of a SDF model tag
     class Model < Element
-        xml_tag_name 'model'
+        xml_tag_name "model"
 
         # Load a model from its name
         #
@@ -14,40 +14,45 @@ module SDF
         #   nil to always read the latest.
         # @return [Model]
         def self.load_from_model_name(model_name, sdf_version = nil)
-            new(XML.model_from_name(model_name, sdf_version).elements.to_a('sdf/model').first)
+            new(XML.model_from_name(model_name,
+                                    sdf_version).elements.to_a("sdf/model").first)
         end
 
-        def initialize(xml = REXML::Element.new('model'), parent = nil)
+        def initialize(xml = REXML::Element.new("model"), parent = nil)
             super
 
-            models, links, joints, plugins, frames = Hash.new, Hash.new, Hash.new, Array.new, Hash.new
+            models = {}
+            links = {}
+            joints = {}
+            plugins = []
+            frames = {}
             xml.elements.each do |child|
-                if child.name == 'model'
-                    models[child.attributes['name']] = child
-                elsif child.name == 'link'
+                if child.name == "model"
+                    models[child.attributes["name"]] = child
+                elsif child.name == "link"
                     link = Link.new(child, self)
                     @canonical_link ||= link
-                    links[child.attributes['name']] = link
-                elsif child.name == 'joint'
-                    joints[child.attributes['name']] = child
-                elsif child.name == 'plugin'
+                    links[child.attributes["name"]] = link
+                elsif child.name == "joint"
+                    joints[child.attributes["name"]] = child
+                elsif child.name == "plugin"
                     plugins << child
-                elsif child.name == 'frame'
-                    frames[child.attributes['name']] = Frame.new(child, self)
+                elsif child.name == "frame"
+                    frames[child.attributes["name"]] = Frame.new(child, self)
                 end
             end
             @links  = links
             @frames = frames
-            @joints = Hash.new
-            @models = Hash.new
+            @joints = {}
+            @models = {}
             models.each do |model_name, xml|
                 model = Model.new(xml, self)
                 @models[model_name] = model
                 @canonical_link ||= model.canonical_link
             end
 
-            submodels = Hash.new
-            @models.each do |child_name, child_model|
+            submodels = {}
+            @models.each do |_child_name, child_model|
                 child_model.each_model_with_name do |m, m_name|
                     submodels["#{child_model.name}::#{m_name}"] = m
                 end
@@ -89,7 +94,7 @@ module SDF
 
         # Whether the model is static
         def static?
-            if static = xml.elements['static']
+            if static = xml.elements["static"]
                 Conversions.to_boolean(static)
             else
                 false
@@ -101,9 +106,10 @@ module SDF
         # The enumeration is recursive, i.e. it will yield models-of-submodels
         #
         # @yieldparam [Model] model
-        def each_model
-            return enum_for(__method__) if !block_given?
-            @models.each_value { |m| yield(m) }
+        def each_model(&block)
+            return enum_for(__method__) unless block_given?
+
+            @models.each_value(&block)
         end
 
         # Enumerates this model's submodels along with their relative name
@@ -111,16 +117,18 @@ module SDF
         # @yieldparam [Model] model
         # @yieldparam [String] name the name, relative to self
         def each_model_with_name
-            return enum_for(__method__) if !block_given?
+            return enum_for(__method__) unless block_given?
+
             @models.each { |name, m| yield(m, name) }
         end
 
         # Enumerates this model's links
         #
         # @yieldparam [Link] link
-        def each_link
-            return enum_for(__method__) if !block_given?
-            @links.each_value { |l| yield(l) }
+        def each_link(&block)
+            return enum_for(__method__) unless block_given?
+
+            @links.each_value(&block)
         end
 
         # Enumerates this model's links with their relative names
@@ -128,7 +136,8 @@ module SDF
         # @yieldparam [Link] link
         # @yieldparam [String] name the name, relative to self
         def each_link_with_name
-            return enum_for(__method__) if !block_given?
+            return enum_for(__method__) unless block_given?
+
             @links.each { |name, link| yield(link, name) }
         end
 
@@ -143,8 +152,9 @@ module SDF
         #
         # @yieldparam [Joint] joint
         def each_joint(&block)
-            return enum_for(__method__) if !block_given?
-            @joints.each_value { |j| yield(j) }
+            return enum_for(__method__) unless block_given?
+
+            @joints.each_value(&block)
         end
 
         # Enumerates this model's joints along with their relative names
@@ -152,7 +162,8 @@ module SDF
         # @yieldparam [Joint] joint
         # @yieldparam [String] name the name, relative to self
         def each_joint_with_name
-            return enum_for(__method__) if !block_given?
+            return enum_for(__method__) unless block_given?
+
             @joints.each { |name, j| yield(j, name) }
         end
 
@@ -177,7 +188,8 @@ module SDF
         #
         # @yieldparam [Sensor] sensor
         def each_sensor(&block)
-            return enum_for(__method__) if !block_given?
+            return enum_for(__method__) unless block_given?
+
             each_link do |l|
                 l.each_sensor(&block)
             end
@@ -186,8 +198,9 @@ module SDF
             end
         end
 
-        def each_frame_with_name(&block)
-            return enum_for(__method__) if !block_given?
+        def each_frame_with_name
+            return enum_for(__method__) unless block_given?
+
             @frames.each { |frame_name, frame| yield(frame, frame_name) }
         end
 
@@ -196,4 +209,3 @@ module SDF
         end
     end
 end
-

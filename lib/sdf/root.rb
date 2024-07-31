@@ -1,7 +1,7 @@
 module SDF
     # A representation of a SDF document root
     class Root < Element
-        xml_tag_name 'sdf'
+        xml_tag_name "sdf"
 
         # The XML document underlying this SDF document
         #
@@ -11,10 +11,10 @@ module SDF
         # The metadata produced while loading this root
         attr_reader :metadata
 
-        def initialize(xml, metadata = Hash.new)
+        def initialize(xml, metadata = {})
             super(xml)
             @metadata = metadata.dup
-            @metadata['includes'] ||= Hash.new
+            @metadata["includes"] ||= {}
         end
 
         # Loads a SDF file
@@ -29,8 +29,9 @@ module SDF
         # @raise [XML::InvalidXML] if the file is not a valid XML file
         # @return [Root]
         def self.load(sdf_file, expected_sdf_version = nil, flatten: true)
-            if sdf_file =~ /^model:\/\/(.*)/
-                return load_from_model_name($1, expected_sdf_version, flatten: flatten)
+            if sdf_file =~ %r{^model://(.*)}
+                load_from_model_name(::Regexp.last_match(1), expected_sdf_version,
+                                     flatten: flatten)
             else
                 xml, metadata = XML.load_sdf(sdf_file, flatten: flatten, metadata: true)
                 new(xml.root, metadata)
@@ -48,7 +49,8 @@ module SDF
         #   nil to always read the latest.
         # @return [Root]
         def self.load_from_model_name(model_name, sdf_version = nil, flatten: true)
-            xml, metadata = XML.model_from_name(model_name, sdf_version, flatten: flatten, metadata: true)
+            xml, metadata = XML.model_from_name(model_name, sdf_version,
+                                                flatten: flatten, metadata: true)
             new(xml.root, metadata)
         end
 
@@ -57,9 +59,9 @@ module SDF
         # @return [Integer] the advertised SDF version (as version * 100, i.e.
         #   version 1.5 is represented by 150).
         def version
-            if version = xml.attributes['version']
-                (Float(version) * 100).round
-            end
+            return unless version = xml.attributes["version"]
+
+            (Float(version) * 100).round
         end
 
         # Returns Model objects from a given included model
@@ -74,36 +76,38 @@ module SDF
         # @raise ArgumentError if an expected node cannot be found. This will
         #   happen on flattened SDF trees.
         def find_all_included_models(model, sdf_version = version)
-            if uri_match = /^model:\/\//.match(model)
-                full_path = XML.model_path_from_name(uri_match.post_match, sdf_version: sdf_version)
-            else
-                full_path = model
-            end
-            (@metadata['includes'][full_path] || Array.new).map do |full_name|
+            full_path = if uri_match = %r{^model://}.match(model)
+                            XML.model_path_from_name(uri_match.post_match,
+                                                     sdf_version: sdf_version)
+                        else
+                            model
+                        end
+            (@metadata["includes"][full_path] || []).map do |full_name|
                 if element = find_by_name(full_name)
                     element
                 else
-                    raise ArgumentError, "#{full_name}, referred to as an included element for #{full_path} does not seem to exist, is this a flattened SDF tree ?"
+                    raise ArgumentError,
+                          "#{full_name}, referred to as an included element for #{full_path} does not seem to exist, is this a flattened SDF tree ?"
                 end
             end
         end
 
         # Returns the full path to the model that provided this element
         def find_file_of(element)
-            return @metadata['path'] if element == self
+            return @metadata["path"] if element == self
 
             name = element.full_name
-            candidates = @metadata['includes'].flat_map do |file_name, root_names|
-                    root_names.map do |n|
-                        match = (name == n) || name.start_with?("#{n}::")
-                        [file_name, n] if match
-                    end.compact
-                end
+            candidates = @metadata["includes"].flat_map do |file_name, root_names|
+                root_names.map do |n|
+                    match = (name == n) || name.start_with?("#{n}::")
+                    [file_name, n] if match
+                end.compact
+            end
 
             if (match = candidates.max_by { |_, name| name.size })
                 match[0]
             else
-                @metadata['path']
+                @metadata["path"]
             end
         end
 
@@ -111,12 +115,12 @@ module SDF
         #
         # @yieldparam [Model] model
         def each_model(recursive: false, &block)
-            return enum_for(__method__, recursive: recursive) if !block_given?
+            return enum_for(__method__, recursive: recursive) unless block_given?
 
             xml.elements.each do |element|
-                if element.name == 'world' && recursive
+                if element.name == "world" && recursive
                     World.new(element, self).each_model(&block)
-                elsif element.name == 'model'
+                elsif element.name == "model"
                     yield(Model.new(element, self))
                 end
             end
@@ -126,11 +130,10 @@ module SDF
         #
         # @yieldparam [World] world
         def each_world
-            return enum_for(__method__) if !block_given?
+            return enum_for(__method__) unless block_given?
+
             xml.elements.each do |element|
-                if element.name == 'world'
-                    yield(World.new(element, self))
-                end
+                yield(World.new(element, self)) if element.name == "world"
             end
         end
 
@@ -145,11 +148,9 @@ module SDF
             end
 
             root = REXML::Document.new
-            root = root.add_element 'sdf'
+            root = root.add_element "sdf"
             root.add_element element
-            if version
-                root.attributes['version'] = version
-            end
+            root.attributes["version"] = version if version
             new(root)
         end
     end

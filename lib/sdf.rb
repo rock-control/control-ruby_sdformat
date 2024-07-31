@@ -1,26 +1,26 @@
-require 'geoutm'
-require 'eigen'
-require 'sdf/exceptions'
-require 'sdf/xml'
-require 'sdf/conversions'
-require 'sdf/element'
-require 'sdf/root'
-require 'sdf/physics'
-require 'sdf/spherical_coordinates'
-require 'sdf/world'
-require 'sdf/model'
-require 'sdf/link'
-require 'sdf/joint'
-require 'sdf/axis'
-require 'sdf/axis_limit'
-require 'sdf/plugin'
-require 'sdf/sensor'
-require 'sdf/frame'
+require "geoutm"
+require "eigen"
+require "sdf/exceptions"
+require "sdf/xml"
+require "sdf/conversions"
+require "sdf/element"
+require "sdf/root"
+require "sdf/physics"
+require "sdf/spherical_coordinates"
+require "sdf/world"
+require "sdf/model"
+require "sdf/link"
+require "sdf/joint"
+require "sdf/axis"
+require "sdf/axis_limit"
+require "sdf/plugin"
+require "sdf/sensor"
+require "sdf/frame"
 
 # The toplevel namespace for sdf
 #
 # You should describe the basic idea about sdf here
-require 'utilrb/logger'
+require "utilrb/logger"
 
 # The ruby_sdformat library is a pure-Ruby library to load and interpret [SDF
 # files](http://sdformat.org)
@@ -35,7 +35,7 @@ require 'utilrb/logger'
 # lighting, terrain, and even physics.
 #
 module SDF
-    extend Logger::Root('SDF', Logger::WARN)
+    extend Logger::Root("SDF", Logger::WARN)
 
     # Exception raised when the XML does not match the SDF specification
     class Invalid < RuntimeError; end
@@ -49,9 +49,7 @@ module SDF
     def self.numeric_version_to_string(v)
         major = v / 100
         minor = v % 100
-        while minor != 0 && (minor % 10 == 0)
-            minor /= 10
-        end
+        minor /= 10 while minor != 0 && (minor % 10 == 0)
         "#{major}.#{minor}"
     end
 
@@ -66,4 +64,3 @@ module SDF
         "<sdf version=\"#{v}\">#{element.xml}</sdf>"
     end
 end
-
