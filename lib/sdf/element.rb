@@ -158,7 +158,7 @@ module SDF
         # Gets one of this element's child
         #
         # @param [String] name the child's tag name
-        # @param [#new(xml, parent)] class the object that should be
+        # @param [#new(xml, parent)] klass the object that should be
         #   instanciated to represent the child
         # @param [Boolean] required if true, the method will raise if the child
         #   is not present. Otherwise, klass will be instanciated with an empty

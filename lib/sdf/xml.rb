@@ -170,8 +170,7 @@ module SDF
 
         # Load a model by its name
         #
-        # See {find_and_load_gazebo_model}. This method raises if the model
-        #   cannot be found
+        # This method raises if the model cannot be found
         #
         # @param [String] model_name the model name
         # @!macro sdf_version
@@ -179,7 +178,9 @@ module SDF
         # @raise [NoSuchModel] if the provided model name does not resolve to a
         #   model in {model_path}
         # @return [REXML::Element]
-        def self.model_from_name(model_name, sdf_version = nil, metadata: false, flatten: true)
+        def self.model_from_name(
+            model_name, sdf_version = nil, metadata: false, flatten: true
+        )
             path = model_path_from_name(model_name, sdf_version: sdf_version)
             cache = @gazebo_models[sdf_version][model_name]
             unless cache.xml
@@ -249,7 +250,7 @@ module SDF
         # This method modifies the XML tree by replacing the include tags found
         # as direct children of the provided element by the included content.
         #
-        # @param [REXML::Element] root element to find include tags
+        # @param [REXML::Element] elem element to find include tags
         # @!macro sdf_version
         # @return [void]
         def self.add_include_tags(elem, sdf_version, base_path)
