@@ -105,7 +105,8 @@ describe SDF::Model do
         it "does not yields the submodel's links" do
             root = SDF::Model.new(
                 REXML::Document.new(
-                    "<model name=\"a\"><model name=\"b\"><link name=\"0\" /><link name=\"1\" /></model></model>"
+                    "<model name=\"a\"><model name=\"b\"><link name=\"0\" />" \
+                    "<link name=\"1\" /></model></model>"
                 ).root
             )
 
@@ -115,7 +116,8 @@ describe SDF::Model do
         it "yields the direct links" do
             root = SDF::Model.new(
                 REXML::Document.new(
-                    "<model name=\"a\"><link name=\"0\" /><link name=\"1\" /><model name=\"b\"></model></model>"
+                    "<model name=\"a\"><link name=\"0\" /><link name=\"1\" />" \
+                    "<model name=\"b\"></model></model>"
                 ).root
             )
 
@@ -137,8 +139,8 @@ describe SDF::Model do
         it "yields the links sensor otherwise" do
             root = SDF::Model.new(
                 REXML::Document.new(
-                    "<model><link name=\"0\"><sensor name=\"a\"/></link><link name=\"1\">" \
-                    "<sensor name=\"b\" /></link></model>"
+                    "<model><link name=\"0\"><sensor name=\"a\"/></link>" \
+                    "<link name=\"1\"><sensor name=\"b\" /></link></model>"
                 ).root
             )
 
@@ -146,7 +148,9 @@ describe SDF::Model do
             assert_equal 2, sensors.size
             sensors.each do |s|
                 assert_kind_of SDF::Sensor, s
-                assert_equal root.xml.elements.to_a("link/sensor[@name=\"#{s.name}\"]"), [s.xml]
+                assert_equal(
+                    root.xml.elements.to_a("link/sensor[@name=\"#{s.name}\"]"), [s.xml]
+                )
             end
         end
     end
@@ -159,7 +163,9 @@ describe SDF::Model do
         it "does not yields the submodel's sensors" do
             root = SDF::Model.new(
                 REXML::Document.new(
-                    "<model name=\"a\"><model name=\"b\"><link name=\"0\"><sensor name=\"a\"/></link><link name=\"1\"><sensor name=\"b\"/></link></model></model>"
+                    "<model name=\"a\"><model name=\"b\"><link name=\"0\">" \
+                    "<sensor name=\"a\"/></link><link name=\"1\"><sensor name=\"b\"/>" \
+                    "</link></model></model>"
                 ).root
             )
 
@@ -169,7 +175,9 @@ describe SDF::Model do
         it "yields the direct sensors" do
             root = SDF::Model.new(
                 REXML::Document.new(
-                    "<model name=\"a\"><link name=\"0\"><sensor name=\"a\"/></link><link name=\"1\"><sensor name=\"b\"/></link><model name=\"b\"></model></model>"
+                    "<model name=\"a\"><link name=\"0\"><sensor name=\"a\"/></link>" \
+                    "<link name=\"1\"><sensor name=\"b\"/></link><model name=\"b\">" \
+                    "</model></model>"
                 ).root
             )
 
@@ -177,7 +185,9 @@ describe SDF::Model do
             assert_equal 2, sensors.size
             sensors.each do |s|
                 assert_kind_of SDF::Sensor, s
-                assert_equal root.xml.elements.to_a("link/sensor[@name=\"#{s.name}\"]"), [s.xml]
+                assert_equal(
+                    root.xml.elements.to_a("link/sensor[@name=\"#{s.name}\"]"), [s.xml]
+                )
             end
         end
     end
