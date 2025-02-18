@@ -43,8 +43,8 @@ module SDF
                     frames[child.attributes["name"]] = Frame.new(child, self)
                 end
             end
-            @links  = links
-            @direct_links  = direct_links
+            @links = links
+            @direct_links = direct_links
             @frames = frames
             @joints = {}
             @models = {}
