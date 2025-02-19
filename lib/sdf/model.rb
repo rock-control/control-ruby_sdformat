@@ -184,7 +184,7 @@ module SDF
             @plugins.each(&block)
         end
 
-        # Enumerates this model's links
+        # Enumerates this model's direct links(does not include submodel's links)
         #
         # @yieldparam [Link] link
         def each_direct_link(&block)
@@ -193,7 +193,8 @@ module SDF
             @direct_links.each_value(&block)
         end
 
-        # Enumerates the sensors contained in this model
+        # Enumerates the sensors contained in this model(does not include submodel's
+        # sensors)
         #
         # Note that sensors are children of links and joints, i.e. calling
         # #parent on the yield sensor objects will not return self
