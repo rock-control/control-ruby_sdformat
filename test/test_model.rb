@@ -131,6 +131,60 @@ describe SDF::Model do
         end
     end
 
+    describe "#each_plugin" do
+        it "does not yield anything if the model has no plugin" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_plugin).to_a.empty?
+        end
+        it "yields the plugins otherwise" do
+            root = SDF::Model.new(REXML::Document.new("<model><plugin name=\"0\" /><plugin name=\"1\" /></model>").root)
+
+            plugin = root.enum_for(:each_plugin).to_a
+            assert_equal 2, plugin.size
+            plugin.each do |l|
+                assert_kind_of SDF::Plugin, l
+                assert_same root, l.parent
+                assert_equal root.xml.elements.to_a("plugin[@name=\"#{l.name}\"]"), [l.xml]
+            end
+        end
+    end
+
+    describe "#each_direct_plugin" do
+        it "does not yield anything if the model has no plugin" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_direct_plugin).to_a.empty?
+        end
+        it "does not yields the submodel's plugins" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                    "<model name=\"a\"><model name=\"b\"><plugin name=\"0\" />" \
+                    "<plugin name=\"1\" /></model></model>"
+                ).root
+            )
+
+            plugins = root.enum_for(:each_direct_plugin).to_a
+            assert_equal 0, plugins.size
+        end
+        it "yields the direct plugins" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                    "<model name=\"a\"><plugin name=\"0\" /><plugin name=\"1\" />" \
+                    "<model name=\"b\"></model></model>"
+                ).root
+            )
+
+            plugins = root.enum_for(:each_direct_plugin).to_a
+            assert_equal 2, plugins.size
+            plugins.each do |l|
+                assert_kind_of SDF::Plugin, l
+                assert_same root, l.parent
+                assert_equal root.xml.elements.to_a("plugin[@name=\"#{l.name}\"]"), [l.xml]
+            end
+        end
+    end
+
+
+
     describe "#each_sensor" do
         it "does not yield anything if the model has no sensor link" do
             root = SDF::Model.new(REXML::Document.new("<model></model>").root)

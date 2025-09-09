@@ -25,7 +25,8 @@ module SDF
             links = {}
             direct_links = {}
             joints = {}
-            plugins = []
+            plugins = {}
+            direct_plugins = {}
             frames = {}
             xml.elements.each do |child|
                 if child.name == "model"
@@ -38,13 +39,17 @@ module SDF
                 elsif child.name == "joint"
                     joints[child.attributes["name"]] = child
                 elsif child.name == "plugin"
-                    plugins << child
+                    plugin = Plugin.new(child, self)
+                    plugins[child.attributes["name"]] = plugin
+                    direct_plugins[child.attributes["name"]] = plugin
                 elsif child.name == "frame"
                     frames[child.attributes["name"]] = Frame.new(child, self)
                 end
             end
             @links = links
+            @plugins = plugins
             @direct_links = direct_links
+            @direct_plugins = direct_plugins
             @frames = frames
             @joints = {}
             @models = {}
@@ -68,6 +73,9 @@ module SDF
                 child_model.each_frame_with_name do |frame, frame_name|
                     @frames["#{child_model.name}::#{frame_name}"] = frame
                 end
+                child_model.each_plugin_with_name do |plugin, plugin_name|
+                    @plugins["#{child_model.name}::#{plugin_name}"] = plugin
+                end
             end
 
             @models.merge!(submodels)
@@ -77,7 +85,6 @@ module SDF
             joints.each do |name, joint_xml|
                 @joints[name] = Joint.new(joint_xml, self)
             end
-            @plugins = plugins.map { |child| Plugin.new(child, self) }
         end
 
         # The link that is used to represent the pose of the model itself
@@ -181,7 +188,28 @@ module SDF
         #
         # @yieldparam [Plugin] plugin
         def each_plugin(&block)
-            @plugins.each(&block)
+            return enum_for(__method__) unless block_given?
+
+            @plugins.each_value(&block)
+        end
+
+        # Enumerates this model's plugins along with their relative names
+        #
+        # @yieldparam [Plugin] plugins
+        # @yieldparam [String] name the name, relative to self
+        def each_plugin_with_name
+            return enum_for(__method__) unless block_given?
+
+            @plugins.each { |name, plugin| yield(plugin, name) }
+        end
+
+        # Enumerates this model's direct plugin(does not include submodel's plugins)
+        #
+        # @yieldparam [Plugin] plugin
+        def each_direct_plugin(&block)
+            return enum_for(__method__) unless block_given?
+
+            @direct_plugins.each_value(&block)
         end
 
         # Enumerates this model's direct links(does not include submodel's links)
