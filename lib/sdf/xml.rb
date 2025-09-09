@@ -362,7 +362,11 @@ module SDF
             sdf = File.open(sdf_file) do |io|
                 REXML::Document.new(io)
             rescue REXML::ParseException => e
-                raise InvalidXML, "cannot load #{sdf_file}: #{e.message}"
+                unless e.message.match?(/No root/)
+                    raise InvalidXML, "cannot load #{sdf_file}: #{e.message}"
+                end
+
+                REXML::Document.new
             end
 
             unless sdf.root
