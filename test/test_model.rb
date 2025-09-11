@@ -183,8 +183,6 @@ describe SDF::Model do
         end
     end
 
-
-
     describe "#each_sensor" do
         it "does not yield anything if the model has no sensor link" do
             root = SDF::Model.new(REXML::Document.new("<model></model>").root)
@@ -297,6 +295,43 @@ describe SDF::Model do
             joint = @root.find_joint_by_name("child_m::child_j")
             assert_equal @root.find_link_by_name("child_m::parent_l"), joint.parent_link
             assert_equal @root.find_link_by_name("child_m::child_l"), joint.child_link
+        end
+    end
+
+    describe "#each_direct_joint" do
+        it "does not yield anything if the model has no joint" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_direct_joint).to_a.empty?
+        end
+
+        it "yields the joints no indirect joints" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                "<model name='a'><model name='b'><link name='parent' /><link name='child' />"\
+                "<joint name=\"0\"><parent>parent</parent><child>child</child></joint>"\
+                "<joint name=\"1\"><parent>parent</parent><child>child</child>/></joint>"\
+                "</model></model>").root)
+
+
+            joints = root.enum_for(:each_direct_joint).to_a
+            assert_equal 0, joints.size
+        end
+
+        it "yields the joints otherwise" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                "<model name='a'><link name='parent' /><link name='child' />"\
+                "<joint name=\"0\"><parent>parent</parent><child>child</child></joint>"\
+                "<joint name=\"1\"><parent>parent</parent><child>child</child>/></joint>"\
+                "<model name='b'></model></model>").root)
+
+            joints = root.enum_for(:each_direct_joint).to_a
+            assert_equal 2, joints.size
+            joints.each do |l|
+                assert_kind_of SDF::Joint, l
+                assert_same root, l.parent
+                assert_equal root.xml.elements.to_a("joint[@name=\"#{l.name}\"]"), [l.xml]
+            end
         end
     end
 

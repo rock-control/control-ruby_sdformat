@@ -25,6 +25,7 @@ module SDF
             links = {}
             direct_links = {}
             joints = {}
+            direct_joints = {}
             plugins = {}
             direct_plugins = {}
             frames = {}
@@ -38,6 +39,7 @@ module SDF
                     direct_links[child.attributes["name"]] = link
                 elsif child.name == "joint"
                     joints[child.attributes["name"]] = child
+                    direct_joints[child.attributes["name"]] = child
                 elsif child.name == "plugin"
                     plugin = Plugin.new(child, self)
                     plugins[child.attributes["name"]] = plugin
@@ -46,12 +48,14 @@ module SDF
                     frames[child.attributes["name"]] = Frame.new(child, self)
                 end
             end
+
             @links = links
             @plugins = plugins
             @direct_links = direct_links
             @direct_plugins = direct_plugins
             @frames = frames
             @joints = {}
+            @direct_joints = {}
             @models = {}
             models.each do |model_name, xml|
                 model = Model.new(xml, self)
@@ -84,6 +88,9 @@ module SDF
             end
             joints.each do |name, joint_xml|
                 @joints[name] = Joint.new(joint_xml, self)
+            end
+            direct_joints.each do |name, joint_xml|
+                @direct_joints[name] = Joint.new(joint_xml, self)
             end
         end
 
@@ -201,6 +208,15 @@ module SDF
             return enum_for(__method__) unless block_given?
 
             @plugins.each { |name, plugin| yield(plugin, name) }
+        end
+
+        # Enumerates this model's direct joints(does not include submodel's plugins)
+        #
+        # @yieldparam [joints] joints
+        def each_direct_joint(&block)
+            return enum_for(__method__) unless block_given?
+
+            @direct_joints.each_value(&block)
         end
 
         # Enumerates this model's direct plugin(does not include submodel's plugins)
