@@ -304,7 +304,7 @@ describe SDF::Model do
             assert root.enum_for(:each_direct_joint).to_a.empty?
         end
 
-        it "yields the joints no indirect joints" do
+        it "doesnt yield the submodel's joints" do
             root = SDF::Model.new(
                 REXML::Document.new(
                 "<model name='a'><model name='b'><link name='parent' /><link name='child' />"\
