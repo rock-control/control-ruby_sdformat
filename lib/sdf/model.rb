@@ -22,46 +22,41 @@ module SDF
             super
 
             models = {}
-            links = {}
             direct_links = {}
-            joints = {}
             direct_joints = {}
-            plugins = {}
             direct_plugins = {}
-            frames = {}
+            direct_frames = {}
             xml.elements.each do |child|
                 if child.name == "model"
                     models[child.attributes["name"]] = child
                 elsif child.name == "link"
                     link = Link.new(child, self)
                     @canonical_link ||= link
-                    links[child.attributes["name"]] = link
                     direct_links[child.attributes["name"]] = link
                 elsif child.name == "joint"
-                    joints[child.attributes["name"]] = child
+                    # joints are handled later, they need links
                     direct_joints[child.attributes["name"]] = child
                 elsif child.name == "plugin"
                     plugin = Plugin.new(child, self)
-                    plugins[child.attributes["name"]] = plugin
                     direct_plugins[child.attributes["name"]] = plugin
                 elsif child.name == "frame"
-                    frames[child.attributes["name"]] = Frame.new(child, self)
+                    direct_frames[child.attributes["name"]] = Frame.new(child, self)
                 end
             end
 
-            @links = links
-            @plugins = plugins
+            @links = direct_links.dup
+            @plugins = direct_plugins.dup
+            @frames = direct_frames.dup
             @direct_links = direct_links
             @direct_plugins = direct_plugins
-            @frames = frames
-            @joints = {}
-            @direct_joints = {}
-            @models = {}
-            models.each do |model_name, xml|
+            @direct_frames = direct_frames
+            @models = models.transform_values do |xml|
                 model = Model.new(xml, self)
-                @models[model_name] = model
                 @canonical_link ||= model.canonical_link
+                model
             end
+
+            @joints = {}
 
             submodels = {}
             @models.each do |_child_name, child_model|
@@ -86,12 +81,10 @@ module SDF
             @models.each_value do |m|
                 m.canonical_link = @canonical_link
             end
-            joints.each do |name, joint_xml|
-                @joints[name] = Joint.new(joint_xml, self)
+            @direct_joints = direct_joints.transform_values do |joint_xml|
+                Joint.new(joint_xml, self)
             end
-            direct_joints.each do |name, joint_xml|
-                @direct_joints[name] = Joint.new(joint_xml, self)
-            end
+            @joints.merge!(@direct_joints)
         end
 
         # The link that is used to represent the pose of the model itself
