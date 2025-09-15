@@ -271,5 +271,14 @@ module SDF
         def each_frame(&block)
             @frames.each_value(&block)
         end
+
+        # Enumerates this model's direct frame(does not include submodel's frame)
+        #
+        # @yieldparam [Frame] frame
+        def each_direct_frame(&block)
+            return enum_for(__method__) unless block_given?
+
+            @direct_frames.each_value(&block)
+        end
     end
 end

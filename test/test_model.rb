@@ -515,4 +515,37 @@ describe SDF::Model do
                          end)
         end
     end
+
+    describe "#each_direct_frame" do
+        it "does not yield anything if the model has no frame" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_direct_frame).to_a.empty?
+        end
+
+        it "doesnt yield the submodel's frame" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                "<model name='a'><model name='b'><frame name=\"0\"/><frame name=\"1\"/>"\
+                "</model></model>").root)
+
+
+            frames = root.enum_for(:each_direct_frame).to_a
+            assert_equal 0, frames.size
+        end
+
+        it "yields the frames otherwise" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                "<model name='a'><frame name=\"0\"/><frame name=\"1\"/>"\
+                "<model name='b'></model></model>").root)
+
+            frames = root.enum_for(:each_direct_frame).to_a
+            assert_equal 2, frames.size
+            frames.each do |l|
+                assert_kind_of SDF::Frame, l
+                assert_same root, l.parent
+                assert_equal root.xml.elements.to_a("frame[@name=\"#{l.name}\"]"), [l.xml]
+            end
+        end
+    end
 end
