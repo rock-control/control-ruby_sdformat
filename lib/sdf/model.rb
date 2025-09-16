@@ -21,14 +21,14 @@ module SDF
         def initialize(xml = REXML::Element.new("model"), parent = nil)
             super
 
-            models = {}
+            direct_models = {}
             direct_links = {}
             direct_joints = {}
             direct_plugins = {}
             direct_frames = {}
             xml.elements.each do |child|
                 if child.name == "model"
-                    models[child.attributes["name"]] = child
+                    direct_models[child.attributes["name"]] = child
                 elsif child.name == "link"
                     link = Link.new(child, self)
                     @canonical_link ||= link
@@ -50,18 +50,18 @@ module SDF
             @direct_links = direct_links
             @direct_plugins = direct_plugins
             @direct_frames = direct_frames
-            @models = models.transform_values do |xml|
+            @direct_models = direct_models.transform_values do |xml|
                 model = Model.new(xml, self)
                 @canonical_link ||= model.canonical_link
                 model
             end
 
             @joints = {}
+            @models = {}
 
-            submodels = {}
-            @models.each do |_child_name, child_model|
+            @direct_models.each do |_child_name, child_model|
                 child_model.each_model_with_name do |m, m_name|
-                    submodels["#{child_model.name}::#{m_name}"] = m
+                    @models["#{child_model.name}::#{m_name}"] = m
                 end
                 child_model.each_link_with_name do |link, link_name|
                     @links["#{child_model.name}::#{link_name}"] = link
@@ -77,7 +77,7 @@ module SDF
                 end
             end
 
-            @models.merge!(submodels)
+            @models.merge!(@direct_models)
             @models.each_value do |m|
                 m.canonical_link = @canonical_link
             end
@@ -210,6 +210,15 @@ module SDF
             return enum_for(__method__) unless block_given?
 
             @direct_joints.each_value(&block)
+        end
+
+        # Enumerates this model's direct models(does not include submodel's links)
+        #
+        # @yieldparam [Model] model
+        def each_direct_model(&block)
+            return enum_for(__method__) unless block_given?
+
+            @direct_models.each_value(&block)
         end
 
         # Enumerates this model's direct plugin(does not include submodel's plugins)
