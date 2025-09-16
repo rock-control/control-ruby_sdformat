@@ -79,6 +79,46 @@ describe SDF::Model do
         end
     end
 
+    describe "#each_direct_model" do
+        it "does not yield anything if the model has no models" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_direct_model).to_a.empty?
+        end
+
+        it "does not yields the submodel's submodels" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                    "<model name=\"a\"><model name=\"b\"><model name=\"c\">" \
+                    "</model></model></model>"
+                ).root
+            )
+
+            submodels = root.enum_for(:each_direct_model).to_a
+            assert_equal 1, submodels.size
+            submodels.each do |m|
+                assert_kind_of SDF::Model, m
+                assert_same root, m.parent
+                assert_equal root.xml.elements.to_a("model[@name=\"#{m.name}\"]"), [m.xml]
+            end
+        end
+        it "yields multiple direct submodels" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                    "<model name=\"a\"><model name=\"b\"><model name=\"c\">" \
+                    "</model><model name=\"d\"></model></model></model>"
+                ).root
+            )
+
+            submodels = root.enum_for(:each_direct_model).to_a
+            assert_equal 1, submodels.size
+            submodels.each do |m|
+                assert_kind_of SDF::Model, m
+                assert_same root, m.parent
+                assert_equal root.xml.elements.to_a("model[@name=\"#{m.name}\"]"), [m.xml]
+            end
+        end
+    end
+
     describe "#each_link" do
         it "does not yield anything if the model has no link" do
             root = SDF::Model.new(REXML::Document.new("<model></model>").root)

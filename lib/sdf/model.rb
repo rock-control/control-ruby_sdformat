@@ -57,7 +57,7 @@ module SDF
             end
 
             @joints = {}
-            @models = {}
+            @models = @direct_models.dup
 
             @direct_models.each do |_child_name, child_model|
                 child_model.each_model_with_name do |m, m_name|
@@ -77,7 +77,6 @@ module SDF
                 end
             end
 
-            @models.merge!(@direct_models)
             @models.each_value do |m|
                 m.canonical_link = @canonical_link
             end
