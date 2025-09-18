@@ -28,7 +28,9 @@ module SDF
             direct_frames = {}
             xml.elements.each do |child|
                 if child.name == "model"
-                    direct_models[child.attributes["name"]] = child
+                    model = Model.new(child, self)
+                    @canonical_link ||= model.canonical_link
+                    direct_models[child.attributes["name"]] = model
                 elsif child.name == "link"
                     link = Link.new(child, self)
                     @canonical_link ||= link
@@ -47,17 +49,13 @@ module SDF
             @links = direct_links.dup
             @plugins = direct_plugins.dup
             @frames = direct_frames.dup
+            @models = direct_models.dup
             @direct_links = direct_links
             @direct_plugins = direct_plugins
             @direct_frames = direct_frames
-            @direct_models = direct_models.transform_values do |xml|
-                model = Model.new(xml, self)
-                @canonical_link ||= model.canonical_link
-                model
-            end
+            @direct_models = direct_models
 
             @joints = {}
-            @models = @direct_models.dup
 
             @direct_models.each do |_child_name, child_model|
                 child_model.each_model_with_name do |m, m_name|
