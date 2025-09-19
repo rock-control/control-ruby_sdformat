@@ -347,11 +347,12 @@ describe SDF::Model do
         it "doesnt yield the submodel's joints" do
             root = SDF::Model.new(
                 REXML::Document.new(
-                "<model name='a'><model name='b'><link name='parent' /><link name='child' />"\
-                "<joint name=\"0\"><parent>parent</parent><child>child</child></joint>"\
-                "<joint name=\"1\"><parent>parent</parent><child>child</child>/></joint>"\
-                "</model></model>").root)
-
+                    "<model name='a'><model name='b'><link name='parent' />" \
+                    "<link name='child' /><joint name=\"0\"><parent>parent</parent><child>" \
+                    "child</child></joint><joint name=\"1\"><parent>parent</parent>" \
+                    "<child>child</child>/></joint></model></model>"
+                ).root
+            )
 
             joints = root.enum_for(:each_direct_joint).to_a
             assert_equal 0, joints.size
@@ -360,10 +361,12 @@ describe SDF::Model do
         it "yields the joints otherwise" do
             root = SDF::Model.new(
                 REXML::Document.new(
-                "<model name='a'><link name='parent' /><link name='child' />"\
-                "<joint name=\"0\"><parent>parent</parent><child>child</child></joint>"\
-                "<joint name=\"1\"><parent>parent</parent><child>child</child>/></joint>"\
-                "<model name='b'></model></model>").root)
+                    "<model name='a'><link name='parent' /><link name='child' />" \
+                    "<joint name=\"0\"><parent>parent</parent><child>child</child></joint>" \
+                    "<joint name=\"1\"><parent>parent</parent><child>child</child>/>" \
+                    "</joint><model name='b'></model></model>"
+                ).root
+            )
 
             joints = root.enum_for(:each_direct_joint).to_a
             assert_equal 2, joints.size
@@ -565,9 +568,10 @@ describe SDF::Model do
         it "doesnt yield the submodel's frame" do
             root = SDF::Model.new(
                 REXML::Document.new(
-                "<model name='a'><model name='b'><frame name=\"0\"/><frame name=\"1\"/>"\
-                "</model></model>").root)
-
+                    "<model name='a'><model name='b'><frame name=\"0\"/>" \
+                    "<frame name=\"1\"/></model></model>"
+                ).root
+            )
 
             frames = root.enum_for(:each_direct_frame).to_a
             assert_equal 0, frames.size
@@ -576,8 +580,10 @@ describe SDF::Model do
         it "yields the frames otherwise" do
             root = SDF::Model.new(
                 REXML::Document.new(
-                "<model name='a'><frame name=\"0\"/><frame name=\"1\"/>"\
-                "<model name='b'></model></model>").root)
+                    "<model name='a'><frame name=\"0\"/><frame name=\"1\"/>" \
+                    "<model name='b'></model></model>"
+                ).root
+            )
 
             frames = root.enum_for(:each_direct_frame).to_a
             assert_equal 2, frames.size
