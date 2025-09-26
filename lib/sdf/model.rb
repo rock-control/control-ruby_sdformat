@@ -21,43 +21,45 @@ module SDF
         def initialize(xml = REXML::Element.new("model"), parent = nil)
             super
 
-            models = {}
-            links = {}
+            direct_models = {}
             direct_links = {}
-            joints = {}
-            plugins = []
-            frames = {}
+            direct_joints = {}
+            direct_plugins = {}
+            direct_frames = {}
             xml.elements.each do |child|
                 if child.name == "model"
-                    models[child.attributes["name"]] = child
+                    model = Model.new(child, self)
+                    @canonical_link ||= model.canonical_link
+                    direct_models[child.attributes["name"]] = model
                 elsif child.name == "link"
                     link = Link.new(child, self)
                     @canonical_link ||= link
-                    links[child.attributes["name"]] = link
                     direct_links[child.attributes["name"]] = link
                 elsif child.name == "joint"
-                    joints[child.attributes["name"]] = child
+                    # joints are handled later, they need links
+                    direct_joints[child.attributes["name"]] = child
                 elsif child.name == "plugin"
-                    plugins << child
+                    plugin = Plugin.new(child, self)
+                    direct_plugins[child.attributes["name"]] = plugin
                 elsif child.name == "frame"
-                    frames[child.attributes["name"]] = Frame.new(child, self)
+                    direct_frames[child.attributes["name"]] = Frame.new(child, self)
                 end
             end
-            @links = links
-            @direct_links = direct_links
-            @frames = frames
-            @joints = {}
-            @models = {}
-            models.each do |model_name, xml|
-                model = Model.new(xml, self)
-                @models[model_name] = model
-                @canonical_link ||= model.canonical_link
-            end
 
-            submodels = {}
-            @models.each do |_child_name, child_model|
+            @links = direct_links.dup
+            @plugins = direct_plugins.dup
+            @frames = direct_frames.dup
+            @models = direct_models.dup
+            @direct_links = direct_links
+            @direct_plugins = direct_plugins
+            @direct_frames = direct_frames
+            @direct_models = direct_models
+
+            @joints = {}
+
+            @direct_models.each do |_child_name, child_model|
                 child_model.each_model_with_name do |m, m_name|
-                    submodels["#{child_model.name}::#{m_name}"] = m
+                    @models["#{child_model.name}::#{m_name}"] = m
                 end
                 child_model.each_link_with_name do |link, link_name|
                     @links["#{child_model.name}::#{link_name}"] = link
@@ -68,16 +70,18 @@ module SDF
                 child_model.each_frame_with_name do |frame, frame_name|
                     @frames["#{child_model.name}::#{frame_name}"] = frame
                 end
+                child_model.each_plugin_with_name do |plugin, plugin_name|
+                    @plugins["#{child_model.name}::#{plugin_name}"] = plugin
+                end
             end
 
-            @models.merge!(submodels)
             @models.each_value do |m|
                 m.canonical_link = @canonical_link
             end
-            joints.each do |name, joint_xml|
-                @joints[name] = Joint.new(joint_xml, self)
+            @direct_joints = direct_joints.transform_values do |joint_xml|
+                Joint.new(joint_xml, self)
             end
-            @plugins = plugins.map { |child| Plugin.new(child, self) }
+            @joints.merge!(@direct_joints)
         end
 
         # The link that is used to represent the pose of the model itself
@@ -181,7 +185,46 @@ module SDF
         #
         # @yieldparam [Plugin] plugin
         def each_plugin(&block)
-            @plugins.each(&block)
+            return enum_for(__method__) unless block_given?
+
+            @plugins.each_value(&block)
+        end
+
+        # Enumerates this model's plugins along with their relative names
+        #
+        # @yieldparam [Plugin] plugins
+        # @yieldparam [String] name the name, relative to self
+        def each_plugin_with_name
+            return enum_for(__method__) unless block_given?
+
+            @plugins.each { |name, plugin| yield(plugin, name) }
+        end
+
+        # Enumerates this model's direct joints(does not include submodel's plugins)
+        #
+        # @yieldparam [joints] joints
+        def each_direct_joint(&block)
+            return enum_for(__method__) unless block_given?
+
+            @direct_joints.each_value(&block)
+        end
+
+        # Enumerates this model's direct models(does not include submodel's links)
+        #
+        # @yieldparam [Model] model
+        def each_direct_model(&block)
+            return enum_for(__method__) unless block_given?
+
+            @direct_models.each_value(&block)
+        end
+
+        # Enumerates this model's direct plugin(does not include submodel's plugins)
+        #
+        # @yieldparam [Plugin] plugin
+        def each_direct_plugin(&block)
+            return enum_for(__method__) unless block_given?
+
+            @direct_plugins.each_value(&block)
         end
 
         # Enumerates this model's direct links(does not include submodel's links)
@@ -233,6 +276,15 @@ module SDF
 
         def each_frame(&block)
             @frames.each_value(&block)
+        end
+
+        # Enumerates this model's direct frame(does not include submodel's frame)
+        #
+        # @yieldparam [Frame] frame
+        def each_direct_frame(&block)
+            return enum_for(__method__) unless block_given?
+
+            @direct_frames.each_value(&block)
         end
     end
 end

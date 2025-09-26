@@ -79,6 +79,46 @@ describe SDF::Model do
         end
     end
 
+    describe "#each_direct_model" do
+        it "does not yield anything if the model has no models" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_direct_model).to_a.empty?
+        end
+
+        it "does not yields the submodel's submodels" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                    "<model name=\"a\"><model name=\"b\"><model name=\"c\">" \
+                    "</model></model></model>"
+                ).root
+            )
+
+            submodels = root.enum_for(:each_direct_model).to_a
+            assert_equal 1, submodels.size
+            submodels.each do |m|
+                assert_kind_of SDF::Model, m
+                assert_same root, m.parent
+                assert_equal root.xml.elements.to_a("model[@name=\"#{m.name}\"]"), [m.xml]
+            end
+        end
+        it "yields multiple direct submodels" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                    "<model name=\"a\"><model name=\"b\"><model name=\"c\">" \
+                    "</model><model name=\"d\"></model></model></model>"
+                ).root
+            )
+
+            submodels = root.enum_for(:each_direct_model).to_a
+            assert_equal 1, submodels.size
+            submodels.each do |m|
+                assert_kind_of SDF::Model, m
+                assert_same root, m.parent
+                assert_equal root.xml.elements.to_a("model[@name=\"#{m.name}\"]"), [m.xml]
+            end
+        end
+    end
+
     describe "#each_link" do
         it "does not yield anything if the model has no link" do
             root = SDF::Model.new(REXML::Document.new("<model></model>").root)
@@ -127,6 +167,58 @@ describe SDF::Model do
                 assert_kind_of SDF::Link, l
                 assert_same root, l.parent
                 assert_equal root.xml.elements.to_a("link[@name=\"#{l.name}\"]"), [l.xml]
+            end
+        end
+    end
+
+    describe "#each_plugin" do
+        it "does not yield anything if the model has no plugin" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_plugin).to_a.empty?
+        end
+        it "yields the plugins otherwise" do
+            root = SDF::Model.new(REXML::Document.new("<model><plugin name=\"0\" /><plugin name=\"1\" /></model>").root)
+
+            plugin = root.enum_for(:each_plugin).to_a
+            assert_equal 2, plugin.size
+            plugin.each do |l|
+                assert_kind_of SDF::Plugin, l
+                assert_same root, l.parent
+                assert_equal root.xml.elements.to_a("plugin[@name=\"#{l.name}\"]"), [l.xml]
+            end
+        end
+    end
+
+    describe "#each_direct_plugin" do
+        it "does not yield anything if the model has no plugin" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_direct_plugin).to_a.empty?
+        end
+        it "does not yields the submodel's plugins" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                    "<model name=\"a\"><model name=\"b\"><plugin name=\"0\" />" \
+                    "<plugin name=\"1\" /></model></model>"
+                ).root
+            )
+
+            plugins = root.enum_for(:each_direct_plugin).to_a
+            assert_equal 0, plugins.size
+        end
+        it "yields the direct plugins" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                    "<model name=\"a\"><plugin name=\"0\" /><plugin name=\"1\" />" \
+                    "<model name=\"b\"></model></model>"
+                ).root
+            )
+
+            plugins = root.enum_for(:each_direct_plugin).to_a
+            assert_equal 2, plugins.size
+            plugins.each do |l|
+                assert_kind_of SDF::Plugin, l
+                assert_same root, l.parent
+                assert_equal root.xml.elements.to_a("plugin[@name=\"#{l.name}\"]"), [l.xml]
             end
         end
     end
@@ -243,6 +335,46 @@ describe SDF::Model do
             joint = @root.find_joint_by_name("child_m::child_j")
             assert_equal @root.find_link_by_name("child_m::parent_l"), joint.parent_link
             assert_equal @root.find_link_by_name("child_m::child_l"), joint.child_link
+        end
+    end
+
+    describe "#each_direct_joint" do
+        it "does not yield anything if the model has no joint" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_direct_joint).to_a.empty?
+        end
+
+        it "doesnt yield the submodel's joints" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                    "<model name='a'><model name='b'><link name='parent' />" \
+                    "<link name='child' /><joint name=\"0\"><parent>parent</parent><child>" \
+                    "child</child></joint><joint name=\"1\"><parent>parent</parent>" \
+                    "<child>child</child>/></joint></model></model>"
+                ).root
+            )
+
+            joints = root.enum_for(:each_direct_joint).to_a
+            assert_equal 0, joints.size
+        end
+
+        it "yields the joints otherwise" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                    "<model name='a'><link name='parent' /><link name='child' />" \
+                    "<joint name=\"0\"><parent>parent</parent><child>child</child></joint>" \
+                    "<joint name=\"1\"><parent>parent</parent><child>child</child>/>" \
+                    "</joint><model name='b'></model></model>"
+                ).root
+            )
+
+            joints = root.enum_for(:each_direct_joint).to_a
+            assert_equal 2, joints.size
+            joints.each do |l|
+                assert_kind_of SDF::Joint, l
+                assert_same root, l.parent
+                assert_equal root.xml.elements.to_a("joint[@name=\"#{l.name}\"]"), [l.xml]
+            end
         end
     end
 
@@ -424,6 +556,42 @@ describe SDF::Model do
                          model.each_frame_with_name.map do |frame, name|
                              [frame.name, name]
                          end)
+        end
+    end
+
+    describe "#each_direct_frame" do
+        it "does not yield anything if the model has no frame" do
+            root = SDF::Model.new(REXML::Document.new("<model></model>").root)
+            assert root.enum_for(:each_direct_frame).to_a.empty?
+        end
+
+        it "doesnt yield the submodel's frame" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                    "<model name='a'><model name='b'><frame name=\"0\"/>" \
+                    "<frame name=\"1\"/></model></model>"
+                ).root
+            )
+
+            frames = root.enum_for(:each_direct_frame).to_a
+            assert_equal 0, frames.size
+        end
+
+        it "yields the frames otherwise" do
+            root = SDF::Model.new(
+                REXML::Document.new(
+                    "<model name='a'><frame name=\"0\"/><frame name=\"1\"/>" \
+                    "<model name='b'></model></model>"
+                ).root
+            )
+
+            frames = root.enum_for(:each_direct_frame).to_a
+            assert_equal 2, frames.size
+            frames.each do |l|
+                assert_kind_of SDF::Frame, l
+                assert_same root, l.parent
+                assert_equal root.xml.elements.to_a("frame[@name=\"#{l.name}\"]"), [l.xml]
+            end
         end
     end
 end
