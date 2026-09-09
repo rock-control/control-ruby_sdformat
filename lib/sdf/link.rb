@@ -14,8 +14,15 @@ module SDF
         # Enumerates this link's sensors
         #
         # @yieldparam [Sensor] sensor
-        def each_sensor(&block)
+        def each_direct_sensor(&block)
             @sensors.each(&block)
+        end
+
+        # Enumerates this link's sensors
+        #
+        # @yieldparam [Sensor] sensor
+        def each_sensor(&block)
+            each_direct_sensor(&block)
         end
 
         # The model's pose w.r.t. its parent
