@@ -312,44 +312,10 @@ module SDF
                     next
                 end
 
-                uri, name = nil
-                overrides = {}
-                inc.elements.each do |element|
-                    if element.name == "uri"
-                        uri = element.text
-                    elsif element.name == "name"
-                        name = element.text
-                    elsif INCLUDE_CHILDREN_ELEMENTS.include?(element.name)
-                        overrides[element.name] = element
-                    else
-                        raise InvalidXML,
-                              "unexpected element '#{element.name}' found as child of an include"
-                    end
-                end
-
-                if !uri
-                    raise InvalidXML, "no uri element in include"
-                elsif uri =~ %r{^model://(\w+)(?:/(.*))?}
-                    model_name = ::Regexp.last_match(1)
-                    file_name = ::Regexp.last_match(2)
-                    if file_name
-                        raise ArgumentError,
-                              "does not know how to resolve an explicit file in a model:// URI inside an include"
-                    end
-
-                    included_sdf, included_metadata = model_from_name(
-                        model_name, sdf_version,
-                        metadata: true, flatten: false, loader: loader
-                    )
-                elsif File.directory?(uri_path = File.expand_path(uri, base_path))
-                    included_sdf, included_metadata = load_gazebo_model(
-                        uri_path, sdf_version,
-                        metadata: true, flatten: false, loader: loader
-                    )
-                else
-                    raise ArgumentError,
-                          "URI #{uri} is neither a model:// URI nor an existing directory"
-                end
+                uri, name, overrides = resolve_include_parameters(inc)
+                included_sdf, included_metadata = load_included_model_from_uri(
+                    uri, base_path, sdf_version: sdf_version, loader: loader
+                )
 
                 includes[included_metadata["path"]] ||= []
                 includes[included_metadata["path"]] << name
@@ -392,6 +358,68 @@ module SDF
                 end
             end
             includes
+        end
+
+        # @api private
+        #
+        # Helper for add_include_tags to resolve the uri, name and overrides specified
+        # by an include tag
+        #
+        # The set of allowed overrides is listed in {INCLUDE_CHILDREN_ELEMENTS}
+        #
+        # @return [(String,String,Hash)] the included URI, its name (if specified) and
+        #    a set of overriden elements that should be applied on the included model,
+        #    as for instance a <pose> element to replace the included model's pose
+        def self.resolve_include_parameters(include_element)
+            uri, name = nil
+            overrides = {}
+            include_element.elements.each do |element|
+                if element.name == "uri"
+                    uri = element.text
+                elsif element.name == "name"
+                    name = element.text
+                elsif INCLUDE_CHILDREN_ELEMENTS.include?(element.name)
+                    overrides[element.name] = element
+                else
+                    raise InvalidXML,
+                          "unexpected element '#{element.name}' found as child of an include"
+                end
+            end
+
+            raise InvalidXML, "no uri element in include" unless uri
+
+            [uri, name, overrides]
+        end
+
+        # @api private
+        #
+        # Helper for add_include_tags which actually loads the SDF model specified by the
+        # include tag
+        def self.load_included_model_from_uri(uri, base_path, sdf_version:, loader:)
+            if uri =~ %r{^model://(\w+)(?:/(.*))?}
+                model_name = ::Regexp.last_match(1)
+                file_name = ::Regexp.last_match(2)
+                if file_name
+                    raise ArgumentError,
+                          "does not know how to resolve an explicit file in a model:// URI inside an include"
+                end
+
+                return model_from_name(
+                    model_name, sdf_version,
+                    metadata: true, flatten: false, loader: loader
+                )
+            end
+
+            uri_path = File.expand_path(uri, base_path)
+            if File.directory?(uri_path)
+                return load_gazebo_model(
+                    uri_path, sdf_version,
+                    metadata: true, flatten: false, loader: loader
+                )
+            end
+
+            raise ArgumentError,
+                  "URI #{uri} is neither a model:// URI nor an existing directory"
         end
 
         # Get sdf_version
