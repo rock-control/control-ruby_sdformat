@@ -72,9 +72,12 @@ module SDF
         #   SDF file for the required SDF version
         #
         # @return [REXML::Element]
-        def self.load_gazebo_model(dir, sdf_version = nil, metadata: false, flatten: true)
-            load_sdf(model_path_of(dir, sdf_version), metadata: metadata,
-                                                      flatten: flatten)
+        def self.load_gazebo_model(
+            dir, sdf_version = nil,
+            metadata: false, flatten: true, loader: default_loader
+        )
+            path = model_path_of(dir, sdf_version)
+            load_sdf(path, metadata: metadata, flatten: flatten, loader: loader)
         end
 
         # Find model string into model.config path
@@ -182,12 +185,14 @@ module SDF
         #   model in {model_path}
         # @return [REXML::Element]
         def self.model_from_name(
-            model_name, sdf_version = nil, metadata: false, flatten: true
+            model_name, sdf_version = nil,
+            metadata: false, flatten: true, loader: default_loader
         )
             path = model_path_from_name(model_name, sdf_version: sdf_version)
             cache = @gazebo_models[sdf_version][model_name]
             unless cache.xml
-                cache.xml, cache.metadata = load_sdf(path, metadata: true, flatten: false)
+                cache.xml, cache.metadata =
+                    load_sdf(path, metadata: true, flatten: false, loader: loader)
             end
             xml = cache.xml
             if flatten
@@ -291,13 +296,14 @@ module SDF
         # @param [REXML::Element] elem element to find include tags
         # @!macro sdf_version
         # @return [void]
-        def self.add_include_tags(elem, sdf_version, base_path)
+        def self.add_include_tags(elem, sdf_version, base_path, loader: default_loader)
             includes = {}
 
             replacements = []
             elem.elements.each do |inc|
                 if inc.name == "world" || inc.name == "model" # model-within-model
-                    added_includes = add_include_tags(inc, sdf_version, base_path)
+                    added_includes =
+                        add_include_tags(inc, sdf_version, base_path, loader: loader)
                     includes.merge! added_includes do |_, old, new|
                         old + new
                     end
@@ -331,13 +337,15 @@ module SDF
                               "does not know how to resolve an explicit file in a model:// URI inside an include"
                     end
 
-                    included_sdf, included_metadata =
-                        model_from_name(model_name, sdf_version, metadata: true,
-                                                                 flatten: false)
+                    included_sdf, included_metadata = model_from_name(
+                        model_name, sdf_version,
+                        metadata: true, flatten: false, loader: loader
+                    )
                 elsif File.directory?(uri_path = File.expand_path(uri, base_path))
-                    included_sdf, included_metadata =
-                        load_gazebo_model(uri_path, sdf_version, metadata: true,
-                                                                 flatten: false)
+                    included_sdf, included_metadata = load_gazebo_model(
+                        uri_path, sdf_version,
+                        metadata: true, flatten: false, loader: loader
+                    )
                 else
                     raise ArgumentError,
                           "URI #{uri} is neither a model:// URI nor an existing directory"
@@ -442,12 +450,17 @@ module SDF
         # @raise [NotSDF] if the file is not a SDF file
         # @raise [InvalidXML] if the file is not a valid XML file
         # @return [REXML::Element]
-        def self.load_sdf(sdf_file, flatten: true, metadata: false)
-            sdf = @default_loader.load_sdf_raw(sdf_file)
+        def self.load_sdf(
+            sdf_file, flatten: true, metadata: false, loader: @default_loader
+        )
+            sdf = loader.load_sdf_raw(sdf_file)
             sdf_version = sdf_version_of(sdf)
 
             sdf_metadata = Hash["includes" => {}, "path" => sdf_file]
-            includes = add_include_tags(sdf.root, sdf_version, File.dirname(sdf_file))
+            includes = add_include_tags(
+                sdf.root, sdf_version, File.dirname(sdf_file),
+                loader: loader
+            )
             sdf_metadata["includes"].merge!(includes) do |_, old, new|
                 old + new
             end
